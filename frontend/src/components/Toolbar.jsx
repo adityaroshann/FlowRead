@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { exportToPDF, exportToDOCX, copyToClipboard } from '../utils/export';
+import ThemeToggle from './ThemeToggle';
 
 export default function Toolbar({ readerRef, plainText, wordCount, readingTime, speaking, onTTSToggle, onSettings, onSummary, theme, onThemeToggle }) {
   const handleExportPDF = () => {
@@ -54,9 +55,7 @@ export default function Toolbar({ readerRef, plainText, wordCount, readingTime, 
         </span>
       )}
 
-      <ToolBtn onClick={onThemeToggle} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-        {theme === 'dark' ? '☀️' : '🌙'}
-      </ToolBtn>
+      <ThemeToggle theme={theme} onToggle={onThemeToggle} size={16} />
 
       <ToolBtn onClick={onTTSToggle} title={speaking ? 'Stop reading' : 'Read aloud'}>
         {speaking ? '⏹' : '🔊'}

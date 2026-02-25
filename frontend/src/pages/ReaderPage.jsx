@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useBionicTransform } from '../hooks/useBionicTransform';
 import { useSummarize } from '../hooks/useSummarize';
 import { useTTS } from '../hooks/useTTS';
+import { useTheme } from '../hooks/useTheme';
 import BionicReader from '../components/BionicReader';
 import Toolbar from '../components/Toolbar';
 import SettingsPanel from '../components/SettingsPanel';
@@ -22,7 +23,8 @@ export default function ReaderPage() {
   const navigate = useNavigate();
   const content = location.state; // { title, paragraphs, source, sourceUrl? }
 
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const { theme, setTheme, toggleTheme } = useTheme();
+  const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, theme }));
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [paragraphsHtml, setParagraphsHtml] = useState([]);
@@ -39,11 +41,10 @@ export default function ReaderPage() {
     }
   }, [content, navigate]);
 
-  // Apply theme/font to document root
+  // Apply font to document root (theme is handled by useTheme hook)
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', settings.theme);
     document.documentElement.setAttribute('data-font', settings.fontFamily);
-  }, [settings.theme, settings.fontFamily]);
+  }, [settings.fontFamily]);
 
   // Transform all paragraphs when intensity or content changes
   useEffect(() => {
@@ -61,12 +62,15 @@ export default function ReaderPage() {
   }, [result]);
 
   const handleSettingChange = useCallback((patch) => {
+    if (patch.theme) setTheme(patch.theme);
     setSettings((prev) => ({ ...prev, ...patch }));
-  }, []);
+  }, [setTheme]);
 
   const handleThemeToggle = useCallback(() => {
-    setSettings((prev) => ({ ...prev, theme: prev.theme === 'dark' ? 'cream' : 'dark' }));
-  }, []);
+    const next = theme === 'dark' ? 'cream' : 'dark';
+    setTheme(next);
+    setSettings((prev) => ({ ...prev, theme: next }));
+  }, [theme, setTheme]);
 
   const handleSummarize = useCallback(() => {
     if (!content?.paragraphs) return;
@@ -159,7 +163,7 @@ export default function ReaderPage() {
         onTTSToggle={() => toggleTTS(plainText)}
         onSettings={() => setSettingsOpen(true)}
         onSummary={() => setSummaryOpen(true)}
-        theme={settings.theme}
+        theme={theme}
         onThemeToggle={handleThemeToggle}
       />
 
