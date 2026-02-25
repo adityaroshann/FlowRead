@@ -1,6 +1,6 @@
 # FlowRead — Read faster. Focus better.
 
-[![Live Demo](https://img.shields.io/badge/Live-flowread.vercel.app-E8A838?style=for-the-badge)](https://flowread.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live-flowread--mu.vercel.app-E8A838?style=for-the-badge)](https://flowread-mu.vercel.app/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.133-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Claude](https://img.shields.io/badge/Claude-Haiku-7C3AED?style=for-the-badge)](https://anthropic.com)
