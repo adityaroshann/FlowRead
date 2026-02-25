@@ -46,7 +46,7 @@ async def summarize(req: SummarizeRequest):
     def generate():
         client = _get_client()
         with client.messages.stream(
-            model="claude-haiku-3-5-20251001",
+            model="claude-haiku-4-5-20251001",
             max_tokens=512,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": f"Summarize this document:\n\n{text_sample}"}],
@@ -67,7 +67,7 @@ async def summarize(req: SummarizeRequest):
 async def simplify(req: SimplifyRequest):
     client = _get_client()
     message = client.messages.create(
-        model="claude-haiku-3-5-20251001",
+        model="claude-haiku-4-5-20251001",
         max_tokens=512,
         messages=[{
             "role": "user",

@@ -64,6 +64,10 @@ export default function ReaderPage() {
     setSettings((prev) => ({ ...prev, ...patch }));
   }, []);
 
+  const handleThemeToggle = useCallback(() => {
+    setSettings((prev) => ({ ...prev, theme: prev.theme === 'dark' ? 'cream' : 'dark' }));
+  }, []);
+
   const handleSummarize = useCallback(() => {
     if (!content?.paragraphs) return;
     const text = content.paragraphs.join(' ');
@@ -155,6 +159,8 @@ export default function ReaderPage() {
         onTTSToggle={() => toggleTTS(plainText)}
         onSettings={() => setSettingsOpen(true)}
         onSummary={() => setSummaryOpen(true)}
+        theme={settings.theme}
+        onThemeToggle={handleThemeToggle}
       />
 
       {/* Settings panel */}

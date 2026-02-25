@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { exportToPDF, exportToDOCX, copyToClipboard } from '../utils/export';
 
-export default function Toolbar({ readerRef, plainText, wordCount, readingTime, speaking, onTTSToggle, onSettings, onSummary }) {
+export default function Toolbar({ readerRef, plainText, wordCount, readingTime, speaking, onTTSToggle, onSettings, onSummary, theme, onThemeToggle }) {
   const handleExportPDF = () => {
     if (readerRef?.current) exportToPDF(readerRef.current);
   };
@@ -53,6 +53,10 @@ export default function Toolbar({ readerRef, plainText, wordCount, readingTime, 
           {wordCount.toLocaleString()} words · {readingTime} min
         </span>
       )}
+
+      <ToolBtn onClick={onThemeToggle} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+        {theme === 'dark' ? '☀️' : '🌙'}
+      </ToolBtn>
 
       <ToolBtn onClick={onTTSToggle} title={speaking ? 'Stop reading' : 'Read aloud'}>
         {speaking ? '⏹' : '🔊'}
