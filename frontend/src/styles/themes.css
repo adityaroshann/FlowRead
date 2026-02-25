@@ -1,0 +1,122 @@
+/* ============================================================
+   FlowRead — Design Tokens & Theme System
+   ============================================================ */
+
+:root,
+[data-theme="cream"] {
+  --bg: #F7F4EE;
+  --bg-surface: #EDEAE3;
+  --text: #1A1A1A;
+  --text-muted: #6B6B6B;
+  --accent: #E8A838;
+  --accent-hover: #D4942A;
+  --border: #D6D0C6;
+  --panel-bg: #FFFFFF;
+  --bold-color: inherit;
+}
+
+[data-theme="dark"] {
+  --bg: #111010;
+  --bg-surface: #1E1C1C;
+  --text: #EDE8DC;
+  --text-muted: #9E9A94;
+  --accent: #E8A838;
+  --accent-hover: #D4942A;
+  --border: #2E2C2C;
+  --panel-bg: #1A1818;
+  --bold-color: inherit;
+}
+
+[data-theme="sepia"] {
+  --bg: #FDF6E3;
+  --bg-surface: #F5EDD5;
+  --text: #3B2E1E;
+  --text-muted: #7A6652;
+  --accent: #C0782A;
+  --accent-hover: #A8631E;
+  --border: #DDD0B8;
+  --panel-bg: #FBF2DC;
+  --bold-color: inherit;
+}
+
+[data-theme="high-contrast"] {
+  --bg: #000000;
+  --bg-surface: #0A0A0A;
+  --text: #FFFFFF;
+  --text-muted: #CCCCCC;
+  --accent: #FFDD00;
+  --accent-hover: #FFE833;
+  --border: #444444;
+  --panel-bg: #111111;
+  --bold-color: #FFDD00;
+}
+
+/* ============================================================
+   Typography
+   ============================================================ */
+:root {
+  --font-body: 'Literata', Georgia, serif;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-dyslexic: 'OpenDyslexic', sans-serif;
+  --font-atkinson: 'Atkinson Hyperlegible', sans-serif;
+
+  --font-size-sm: 0.9rem;
+  --font-size-md: 1.05rem;
+  --font-size-lg: 1.2rem;
+  --font-size-xl: 1.4rem;
+
+  --line-height-normal: 1.6;
+  --line-height-relaxed: 1.85;
+  --line-height-spacious: 2.1;
+
+  --reader-max-width: 680px;
+
+  --transition-fast: 120ms ease;
+  --transition-base: 220ms ease;
+  --transition-slow: 380ms ease;
+}
+
+/* ============================================================
+   Global Reset
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-relaxed);
+  transition: background-color var(--transition-base), color var(--transition-base);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Font family overrides
+   ============================================================ */
+[data-font="dyslexic"] body,
+[data-font="dyslexic"] {
+  font-family: var(--font-dyslexic);
+}
+
+[data-font="atkinson"] body,
+[data-font="atkinson"] {
+  font-family: var(--font-atkinson);
+}
+
+/* ============================================================
+   Bionic bold style
+   ============================================================ */
+.bionic-text b {
+  font-weight: 700;
+  color: var(--bold-color);
+}
