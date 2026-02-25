@@ -122,7 +122,7 @@ export default function LandingPage() {
           Flow<span style={{ color: 'var(--accent)' }}>Read</span>
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <NavLink href="https://github.com/adityaroshannn/flowread">GitHub ↗</NavLink>
+          <NavLink href="https://github.com/adityaroshann/flowread">GitHub ↗</NavLink>
           <ThemeToggle theme={theme} onToggle={toggleTheme} size={18} />
         </div>
       </nav>
@@ -294,7 +294,7 @@ export default function LandingPage() {
           {/* Links */}
           <div>
             <p style={footerHeadingStyle}>Links</p>
-            <FooterLink href="https://github.com/adityaroshannn/flowread">GitHub</FooterLink>
+            <FooterLink href="https://github.com/adityaroshann/flowread">GitHub</FooterLink>
             <FooterLink href="#upload-section">Upload</FooterLink>
           </div>
           {/* Tech */}
@@ -315,8 +315,8 @@ export default function LandingPage() {
           fontSize: '0.8rem',
         }}>
           Built by{' '}
-          <a href="https://github.com/adityaroshannn" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-            @adityaroshannn
+          <a href="https://github.com/adityaroshann" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+            @adityaroshann
           </a>{' '}
           · Powered by Claude
         </div>
