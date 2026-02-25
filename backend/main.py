@@ -9,7 +9,7 @@ from routers import transform, extract, scrape, summarize
 
 app = FastAPI(title="FlowRead API", version="1.0.0")
 
-allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,https://flowread-mu.vercel.app")
 origins = [o.strip() for o in allowed_origins_env.split(",")]
 
 app.add_middleware(
