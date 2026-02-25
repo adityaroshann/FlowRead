@@ -44,11 +44,15 @@ export default function UploadZone({ onContent }) {
   });
 
   const handleURL = async () => {
-    if (!url.trim()) return;
+    let finalUrl = url.trim();
+    if (!finalUrl) return;
+    if (!/^https?:\/\//i.test(finalUrl)) {
+      finalUrl = 'https://' + finalUrl;
+    }
     setError(null);
     setLoading(true);
     try {
-      const data = await scrapeUrl(url.trim());
+      const data = await scrapeUrl(finalUrl);
       onContent({ title: data.title, paragraphs: data.paragraphs, sourceUrl: data.sourceUrl, source: 'url' });
     } catch (err) {
       setError(err.response?.data?.detail || "We couldn't read this page — try pasting the text directly.");
@@ -185,7 +189,7 @@ export default function UploadZone({ onContent }) {
           <motion.div key="url" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
-                type="url"
+                type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleURL()}
