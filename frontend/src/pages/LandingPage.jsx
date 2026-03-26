@@ -1,92 +1,69 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useTheme } from '../hooks/useTheme';
+import { motion, useReducedMotion } from 'framer-motion';
+import { useSettings } from '../hooks/useSettings';
 import ThemeToggle from '../components/ThemeToggle';
 import HeroDemo from '../components/HeroDemo';
 import UploadZone from '../components/UploadZone';
 import AIShowcase from '../components/AIShowcase';
+import { FileText, Brain, Sparkles, Accessibility, Volume2, Download } from 'lucide-react';
 
 const FEATURES = [
-  { icon: '👁', title: 'Bionic Reading', desc: 'Bold the first half of every word. Your brain fills in the rest — up to 2× faster.' },
-  { icon: '🤖', title: 'AI Summaries', desc: 'Get a TL;DR and key bullets for any document in seconds via Claude Haiku.' },
-  { icon: '📄', title: 'Any Format', desc: 'PDF, DOCX, TXT, or paste a URL. We handle the extraction.' },
-  { icon: '♿', title: 'Accessibility First', desc: 'Designed for ADHD and dyslexia. OpenDyslexic font, high-contrast mode, and TTS built in.' },
-  { icon: '🔊', title: 'Text to Speech', desc: 'Listen to your documents read aloud with natural-sounding voice synthesis.' },
-  { icon: '📤', title: 'Export Anywhere', desc: 'Export your bionic text as PDF or DOCX. Copy to clipboard in one click.' },
+  { icon: FileText, title: 'Any Format', desc: 'PDF, DOCX, TXT, or paste a URL. We extract the content automatically.' },
+  { icon: Brain, title: 'Bionic Reading', desc: 'Bold the first half of every word. Your brain fills in the rest — faster, focused reading.' },
+  { icon: Sparkles, title: 'AI Summaries', desc: 'Get a TL;DR and key points for any document in seconds.' },
+  { icon: Accessibility, title: 'Built for ADHD', desc: 'Focus mode, reading timer, paragraph simplification, and dyslexia-friendly fonts.' },
+  { icon: Volume2, title: 'Read Aloud', desc: 'Listen to your documents with sentence-by-sentence tracking.' },
+  { icon: Download, title: 'Export', desc: 'Save as PDF or Word document with bionic formatting preserved.' },
 ];
-
-const fadeUp = (i) => ({
-  initial: { opacity: 0, y: 40 },
-  animate: { opacity: 1, y: 0 },
-  transition: { delay: i * 0.08, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
-});
-
-const scrollReveal = {
-  initial: { opacity: 0, y: 50 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-80px' },
-  transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
-};
-
-function WaveDivider() {
-  return (
-    <div style={{ overflow: 'hidden', lineHeight: 0 }}>
-      <svg viewBox="0 0 1200 120" preserveAspectRatio="none"
-        style={{ width: '100%', height: 50, display: 'block' }}>
-        <path
-          d="M0,60 C200,100 400,20 600,60 C800,100 1000,20 1200,60 L1200,120 L0,120 Z"
-          fill="var(--bg-surface)"
-          opacity="0.4"
-        />
-      </svg>
-    </div>
-  );
-}
 
 function FeatureCard({ feature, index }) {
   const [hovered, setHovered] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
+  const Icon = feature.icon;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ delay: index * 0.1, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      {...(shouldReduceMotion ? {} : {
+        initial: { opacity: 0, y: 16 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true, margin: '-40px' },
+        transition: { delay: index * 0.06, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] },
+      })}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         padding: '2rem',
-        background: 'var(--glass-bg)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderRadius: 16,
-        border: `1px solid ${hovered ? 'var(--accent)' : 'var(--glass-border)'}`,
-        boxShadow: hovered
-          ? '0 8px 32px rgba(0,0,0,0.12), 0 0 20px var(--glow-color)'
-          : '0 4px 20px rgba(0,0,0,0.06)',
-        transition: 'transform 250ms ease, box-shadow 300ms ease, border-color 250ms ease',
-        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+        background: hovered ? 'var(--bg-surface)' : 'transparent',
+        borderRadius: 'var(--radius-lg)',
+        transition: 'background 300ms ease',
         cursor: 'default',
       }}
     >
-      <motion.div
-        animate={hovered ? { scale: 1.15, rotate: 5 } : { scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-        style={{ fontSize: '1.75rem', marginBottom: '0.75rem' }}
-      >
-        {feature.icon}
-      </motion.div>
+      <div style={{
+        width: 40,
+        height: 40,
+        borderRadius: 'var(--radius-md)',
+        background: hovered ? 'var(--accent)' : 'var(--bg-surface)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '1.25rem',
+        transition: 'background 300ms ease',
+      }}>
+        <Icon size={20} style={{ color: hovered ? '#fff' : 'var(--text)', transition: 'color 300ms ease' }} />
+      </div>
       <h3 style={{
         fontFamily: 'var(--font-display)',
         fontSize: '1.05rem',
         marginBottom: '0.5rem',
         color: 'var(--text)',
         fontWeight: 600,
+        letterSpacing: '-0.01em',
       }}>
         {feature.title}
       </h3>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.65 }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.55 }}>
         {feature.desc}
       </p>
     </motion.div>
@@ -95,285 +72,243 @@ function FeatureCard({ feature, index }) {
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  const { settings, toggleTheme } = useSettings();
+  const shouldReduceMotion = useReducedMotion();
 
   const handleContent = (content) => {
     navigate('/reader', { state: content });
   };
 
+  const fade = (delay = 0) => shouldReduceMotion ? {} : {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { delay, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
+  };
+
+  const reveal = shouldReduceMotion ? {} : {
+    initial: { opacity: 0, y: 24 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: '-60px' },
+    transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
+  };
+
   return (
-    <main style={{ minHeight: '100dvh', background: 'var(--bg)', transition: 'background 220ms ease' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--bg)', transition: 'background var(--transition-base)' }}>
+      {/* Skip-to-content */}
+      <a href="#upload-section" style={{
+        position: 'absolute', top: -40, left: 0,
+        background: 'var(--accent)', color: '#fff',
+        padding: '0.5rem 1rem', zIndex: 1000, fontWeight: 600, fontSize: '0.85rem',
+        borderRadius: '0 0 var(--radius-sm) 0',
+      }}
+        onFocus={(e) => { e.currentTarget.style.top = '0'; }}
+        onBlur={(e) => { e.currentTarget.style.top = '-40px'; }}
+      >
+        Skip to upload
+      </a>
+
       {/* Nav */}
-      <nav style={{
+      <nav role="navigation" aria-label="Main navigation" style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '1.25rem 2rem',
-        borderBottom: '1px solid var(--border)',
+        padding: '0.875rem 2rem',
         position: 'sticky',
         top: 0,
-        background: 'var(--bg)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        background: 'var(--panel-bg)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+        borderBottom: '1px solid var(--border)',
         zIndex: 50,
-        transition: 'background 220ms ease',
       }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--text)' }}>
-          Flow<span style={{ color: 'var(--accent)' }}>Read</span>
+        <span style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '1.15rem',
+          fontWeight: 700,
+          color: 'var(--text)',
+          letterSpacing: '-0.02em',
+        }}>
+          FlowRead
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <NavLink href="https://github.com/adityaroshann/flowread">GitHub ↗</NavLink>
-          <ThemeToggle theme={theme} onToggle={toggleTheme} size={18} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <a
+            href="https://github.com/adityaroshann/flowread"
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              color: 'var(--text-muted)',
+              fontSize: '0.82rem',
+              textDecoration: 'none',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 500,
+              transition: 'color var(--transition-fast)',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
+          >
+            GitHub
+          </a>
+          <ThemeToggle theme={settings.theme} onToggle={toggleTheme} size={16} />
         </div>
       </nav>
 
-      {/* Hero */}
-      <section style={{ position: 'relative', overflow: 'hidden', maxWidth: 800, margin: '0 auto', padding: '5rem 2rem 3rem', textAlign: 'center' }}>
-        {/* Dot grid background */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: 'radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0)',
-          backgroundSize: '40px 40px',
-          opacity: 0.3,
-          pointerEvents: 'none',
-        }} />
-
-        <motion.div {...fadeUp(0)} style={{ position: 'relative' }}>
-          <motion.span
-            animate={{
-              boxShadow: [
-                '0 0 15px var(--glow-color)',
-                '0 0 30px var(--glow-color-strong)',
-                '0 0 15px var(--glow-color)',
-              ],
-            }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+      <main role="main">
+        {/* Hero */}
+        <section style={{
+          maxWidth: 680,
+          margin: '0 auto',
+          padding: '6rem 2rem 3rem',
+          textAlign: 'center',
+        }}>
+          <motion.h1
+            {...fade(0)}
             style={{
-              display: 'inline-block',
-              background: 'var(--accent)',
-              color: '#1A1A1A',
-              fontSize: '0.75rem',
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(2.5rem, 6vw, 4rem)',
               fontWeight: 700,
-              fontFamily: 'var(--font-mono)',
-              padding: '0.3rem 0.85rem',
-              borderRadius: 100,
-              marginBottom: '1.5rem',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
+              lineHeight: 1.05,
+              color: 'var(--text)',
+              letterSpacing: '-0.035em',
+              marginBottom: '1.25rem',
             }}
           >
-            Accessibility-first reading
-          </motion.span>
-        </motion.div>
+            Read faster.{' '}
+            <span style={{ color: 'var(--accent)' }}>Focus better.</span>
+          </motion.h1>
 
-        <motion.h1 {...fadeUp(1)} style={{
-          position: 'relative',
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(2.5rem, 6vw, 4rem)',
-          fontWeight: 700,
-          lineHeight: 1.1,
-          background: 'linear-gradient(135deg, var(--text) 0%, var(--accent) 50%, var(--text) 100%)',
-          backgroundSize: '200% 200%',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          animation: 'gradient-shift 6s ease infinite',
-          marginBottom: '1.25rem',
+          <motion.p
+            {...fade(0.08)}
+            style={{
+              fontSize: '1.2rem',
+              color: 'var(--text-muted)',
+              maxWidth: 440,
+              margin: '0 auto 3rem',
+              lineHeight: 1.5,
+              fontFamily: 'var(--font-display)',
+              fontWeight: 400,
+            }}
+          >
+            Transform any document into an accessible reading experience. Built for ADHD and dyslexia.
+          </motion.p>
+
+          {/* Try it live */}
+          <motion.div {...fade(0.14)}>
+            <p style={{
+              fontSize: '0.65rem',
+              color: 'var(--text-muted)',
+              fontFamily: 'var(--font-mono)',
+              marginBottom: '0.75rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              fontWeight: 500,
+            }}>
+              Try it live
+            </p>
+            <HeroDemo />
+          </motion.div>
+        </section>
+
+        {/* Upload */}
+        <section id="upload-section" style={{
+          maxWidth: 640,
+          margin: '0 auto',
+          padding: '4rem 2rem',
         }}>
-          Read faster.<br />Focus better.
-        </motion.h1>
+          <motion.h2
+            {...reveal}
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '1.75rem',
+              textAlign: 'center',
+              marginBottom: '2rem',
+              color: 'var(--text)',
+              fontWeight: 700,
+              letterSpacing: '-0.025em',
+            }}
+          >
+            Start reading
+          </motion.h2>
+          <UploadZone onContent={handleContent} />
+        </section>
 
-        <motion.p {...fadeUp(2)} style={{
-          position: 'relative',
-          fontSize: '1.15rem',
-          color: 'var(--text-muted)',
-          maxWidth: 520,
-          margin: '0 auto 3rem',
-          lineHeight: 1.7,
+        {/* AI Showcase */}
+        <section style={{ padding: '2rem 0' }}>
+          <AIShowcase />
+        </section>
+
+        {/* Features */}
+        <section style={{
+          maxWidth: 960,
+          margin: '0 auto',
+          padding: '4rem 2rem 6rem',
         }}>
-          FlowRead transforms any document, PDF, or URL into a bionic reading experience — designed for ADHD and dyslexia.
-        </motion.p>
+          <motion.div {...reveal} style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(1.5rem, 3.5vw, 2.25rem)',
+              color: 'var(--text)',
+              fontWeight: 700,
+              letterSpacing: '-0.025em',
+            }}>
+              Everything you need
+            </h2>
+            <p style={{
+              color: 'var(--text-muted)',
+              fontSize: '1.05rem',
+              fontFamily: 'var(--font-display)',
+              marginTop: '0.5rem',
+            }}>
+              Accessibility features that actually make a difference.
+            </p>
+          </motion.div>
 
-        {/* Live demo */}
-        <motion.div {...fadeUp(3)} style={{ position: 'relative' }}>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Try it live
-          </p>
-          <HeroDemo />
-        </motion.div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })}
-          style={{
-            position: 'relative',
-            marginTop: '2.5rem',
-            color: 'var(--text-muted)',
-            fontSize: '1.25rem',
-            cursor: 'pointer',
-            opacity: 0.6,
-          }}
-        >
-          ↓
-        </motion.div>
-      </section>
-
-      <WaveDivider />
-
-      {/* Upload section */}
-      <section id="upload-section" style={{ maxWidth: 800, margin: '0 auto', padding: '3rem 2rem' }}>
-        <motion.h2
-          {...scrollReveal}
-          style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', textAlign: 'center', marginBottom: '2rem', color: 'var(--text)', fontWeight: 700 }}
-        >
-          Load your document
-        </motion.h2>
-        <UploadZone onContent={handleContent} />
-      </section>
-
-      <WaveDivider />
-
-      {/* AI Showcase */}
-      <AIShowcase />
-
-      <WaveDivider />
-
-      {/* Features */}
-      <section style={{ maxWidth: 960, margin: '0 auto', padding: '4rem 2rem' }}>
-        <motion.div {...scrollReveal} style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <p style={{
-            fontSize: '0.75rem',
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--accent)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            marginBottom: '0.75rem',
-            fontWeight: 700,
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '0.5rem',
           }}>
-            Features
-          </p>
-          <h2 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(1.5rem, 4vw, 2.25rem)',
-            color: 'var(--text)',
-            fontWeight: 700,
-          }}>
-            Everything you need to read better
-          </h2>
-        </motion.div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
-          {FEATURES.map((f, i) => (
-            <FeatureCard key={f.title} feature={f} index={i} />
-          ))}
-        </div>
-      </section>
+            {FEATURES.map((f, i) => (
+              <FeatureCard key={f.title} feature={f} index={i} />
+            ))}
+          </div>
+        </section>
+      </main>
 
       {/* Footer */}
-      <footer style={{ borderTop: '1px solid var(--border)', padding: '3rem 2rem 2rem' }}>
+      <footer role="contentinfo" style={{
+        borderTop: '1px solid var(--border)',
+        padding: '1.5rem 2rem',
+      }}>
         <div style={{
-          maxWidth: 900,
+          maxWidth: 960,
           margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '2rem',
-          marginBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
         }}>
-          {/* Brand */}
-          <div>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>
-              Flow<span style={{ color: 'var(--accent)' }}>Read</span>
-            </span>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem', lineHeight: 1.6 }}>
-              Accessibility-first reading, powered by AI.
-            </p>
-          </div>
-          {/* Links */}
-          <div>
-            <p style={footerHeadingStyle}>Links</p>
-            <FooterLink href="https://github.com/adityaroshann/flowread">GitHub</FooterLink>
-            <FooterLink href="#upload-section">Upload</FooterLink>
-          </div>
-          {/* Tech */}
-          <div>
-            <p style={footerHeadingStyle}>Built With</p>
-            <p style={footerItemStyle}>React + Vite</p>
-            <p style={footerItemStyle}>Claude API</p>
-            <p style={footerItemStyle}>Framer Motion</p>
-          </div>
-        </div>
-        <div style={{
-          maxWidth: 900,
-          margin: '0 auto',
-          textAlign: 'center',
-          paddingTop: '1.5rem',
-          borderTop: '1px solid var(--border)',
-          color: 'var(--text-muted)',
-          fontSize: '0.8rem',
-        }}>
-          Built by{' '}
-          <a href="https://github.com/adityaroshann" target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-            @adityaroshann
-          </a>{' '}
-          · Powered by Claude
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+          }}>
+            FlowRead
+          </span>
+          <span style={{
+            color: 'var(--text-muted)',
+            fontSize: '0.78rem',
+            fontFamily: 'var(--font-display)',
+          }}>
+            by{' '}
+            <a href="https://github.com/adityaroshann" target="_blank" rel="noreferrer"
+              style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
+              @adityaroshann
+            </a>
+          </span>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }
-
-function NavLink({ href, children }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textDecoration: 'none', transition: 'color 150ms ease' }}
-      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
-    >
-      {children}
-    </a>
-  );
-}
-
-function FooterLink({ href, children }) {
-  return (
-    <a
-      href={href}
-      target={href.startsWith('#') ? undefined : '_blank'}
-      rel={href.startsWith('#') ? undefined : 'noreferrer'}
-      style={{
-        display: 'block',
-        color: 'var(--text-muted)',
-        fontSize: '0.85rem',
-        textDecoration: 'none',
-        marginBottom: '0.4rem',
-        transition: 'color 150ms ease',
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
-    >
-      {children}
-    </a>
-  );
-}
-
-const footerHeadingStyle = {
-  fontSize: '0.7rem',
-  fontFamily: 'var(--font-mono)',
-  color: 'var(--text-muted)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  marginBottom: '0.75rem',
-  fontWeight: 700,
-};
-
-const footerItemStyle = {
-  color: 'var(--text-muted)',
-  fontSize: '0.85rem',
-  marginBottom: '0.4rem',
-};

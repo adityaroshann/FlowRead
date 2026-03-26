@@ -1,6 +1,13 @@
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SummaryPanel({ open, onClose, summary, rawStream, loading, error, onSummarize }) {
+  const panelRef = useRef(null);
+
+  // Focus panel when it opens
+  useEffect(() => {
+    if (open) setTimeout(() => panelRef.current?.focus(), 100);
+  }, [open]);
   return (
     <AnimatePresence>
       {open && (
@@ -15,6 +22,10 @@ export default function SummaryPanel({ open, onClose, summary, rawStream, loadin
           />
 
           <motion.aside
+            ref={panelRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-label="AI Summary"
             key="summary-panel"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
@@ -50,7 +61,7 @@ export default function SummaryPanel({ open, onClose, summary, rawStream, loadin
             )}
 
             {loading && !summary && (
-              <div>
+              <div role="status" aria-live="polite">
                 <p style={{ fontSize: '0.8rem', color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginBottom: '0.75rem' }}>
                   Summarizing…
                 </p>

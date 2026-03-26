@@ -1,87 +1,109 @@
 /* ============================================================
    FlowRead — Design Tokens & Theme System
+   Forest / sage green, warm, calm reading aesthetic
    ============================================================ */
 
 :root,
 [data-theme="cream"] {
-  --bg: #F7F4EE;
-  --bg-surface: #EDEAE3;
-  --text: #1A1A1A;
-  --text-muted: #6B6B6B;
-  --accent: #E8A838;
-  --accent-hover: #D4942A;
-  --border: #D6D0C6;
-  --panel-bg: #FFFFFF;
+  --bg: #FAFAF8;
+  --bg-surface: #F0EEEA;
+  --bg-elevated: #FFFFFF;
+  --text: #1A1D1A;
+  --text-muted: #7A7F76;
+  --text-secondary: #5C6158;
+  --accent: #4A7C59;
+  --accent-hover: #3D6B4A;
+  --accent-light: #5E9E6E;
+  --accent-subtle: rgba(74, 124, 89, 0.08);
+  --accent-glow: rgba(74, 124, 89, 0.12);
+  --border: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.1);
+  --panel-bg: rgba(255, 255, 255, 0.88);
   --bold-color: inherit;
-  --glass-bg: rgba(247, 244, 238, 0.6);
-  --glass-border: rgba(214, 208, 198, 0.5);
-  --glow-color: rgba(232, 168, 56, 0.15);
-  --glow-color-strong: rgba(232, 168, 56, 0.3);
-  --gradient-start: #F7F4EE;
-  --gradient-end: #EDEAE3;
+  --shadow-sm: 0 1px 2px rgba(26, 29, 26, 0.04);
+  --shadow-md: 0 4px 12px rgba(26, 29, 26, 0.06);
+  --shadow-lg: 0 8px 30px rgba(26, 29, 26, 0.08);
+  --shadow-toolbar: 0 2px 24px rgba(26, 29, 26, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --warm-tint: rgba(200, 180, 140, 0.04);
 }
 
 [data-theme="dark"] {
-  --bg: #111010;
-  --bg-surface: #1E1C1C;
-  --text: #EDE8DC;
-  --text-muted: #9E9A94;
-  --accent: #E8A838;
-  --accent-hover: #D4942A;
-  --border: #2E2C2C;
-  --panel-bg: #1A1818;
+  --bg: #101210;
+  --bg-surface: #1A1E1A;
+  --bg-elevated: #222622;
+  --text: #E8EAE5;
+  --text-muted: #8A8E86;
+  --text-secondary: #A0A59C;
+  --accent: #6BBF7E;
+  --accent-hover: #7DCF8F;
+  --accent-light: #8FD89E;
+  --accent-subtle: rgba(107, 191, 126, 0.1);
+  --accent-glow: rgba(107, 191, 126, 0.08);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --panel-bg: rgba(26, 30, 26, 0.92);
   --bold-color: inherit;
-  --glass-bg: rgba(30, 28, 28, 0.6);
-  --glass-border: rgba(46, 44, 44, 0.5);
-  --glow-color: rgba(232, 168, 56, 0.1);
-  --glow-color-strong: rgba(232, 168, 56, 0.25);
-  --gradient-start: #111010;
-  --gradient-end: #1E1C1C;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --shadow-toolbar: 0 2px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --warm-tint: rgba(0, 0, 0, 0);
 }
 
 [data-theme="sepia"] {
-  --bg: #FDF6E3;
-  --bg-surface: #F5EDD5;
-  --text: #3B2E1E;
-  --text-muted: #7A6652;
-  --accent: #C0782A;
-  --accent-hover: #A8631E;
-  --border: #DDD0B8;
-  --panel-bg: #FBF2DC;
+  --bg: #F7F3EC;
+  --bg-surface: #EDE8DF;
+  --bg-elevated: #FBF8F3;
+  --text: #3B3428;
+  --text-muted: #8A7E6E;
+  --text-secondary: #6E6456;
+  --accent: #5A7A4E;
+  --accent-hover: #4D6C42;
+  --accent-light: #6E9460;
+  --accent-subtle: rgba(90, 122, 78, 0.08);
+  --accent-glow: rgba(90, 122, 78, 0.1);
+  --border: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.09);
+  --panel-bg: rgba(251, 248, 243, 0.9);
   --bold-color: inherit;
-  --glass-bg: rgba(253, 246, 227, 0.6);
-  --glass-border: rgba(221, 208, 184, 0.5);
-  --glow-color: rgba(192, 120, 42, 0.15);
-  --glow-color-strong: rgba(192, 120, 42, 0.3);
-  --gradient-start: #FDF6E3;
-  --gradient-end: #F5EDD5;
+  --shadow-sm: 0 1px 2px rgba(59, 52, 40, 0.04);
+  --shadow-md: 0 4px 12px rgba(59, 52, 40, 0.06);
+  --shadow-lg: 0 8px 30px rgba(59, 52, 40, 0.08);
+  --shadow-toolbar: 0 2px 24px rgba(59, 52, 40, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --warm-tint: rgba(200, 170, 120, 0.06);
 }
 
 [data-theme="high-contrast"] {
   --bg: #000000;
   --bg-surface: #0A0A0A;
+  --bg-elevated: #141414;
   --text: #FFFFFF;
   --text-muted: #CCCCCC;
-  --accent: #FFDD00;
-  --accent-hover: #FFE833;
+  --text-secondary: #BBBBBB;
+  --accent: #3CFF6E;
+  --accent-hover: #5CFF88;
+  --accent-light: #7CFFA0;
+  --accent-subtle: rgba(60, 255, 110, 0.1);
+  --accent-glow: rgba(60, 255, 110, 0.08);
   --border: #444444;
-  --panel-bg: #111111;
-  --bold-color: #FFDD00;
-  --glass-bg: rgba(10, 10, 10, 0.7);
-  --glass-border: rgba(68, 68, 68, 0.5);
-  --glow-color: rgba(255, 221, 0, 0.1);
-  --glow-color-strong: rgba(255, 221, 0, 0.25);
-  --gradient-start: #000000;
-  --gradient-end: #0A0A0A;
+  --border-strong: #555555;
+  --panel-bg: rgba(20, 20, 20, 0.95);
+  --bold-color: #3CFF6E;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-toolbar: 0 0 0 2px #444;
+  --warm-tint: rgba(0, 0, 0, 0);
 }
 
 /* ============================================================
    Typography
    ============================================================ */
 :root {
+  --font-system: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-body: 'Literata', Georgia, serif;
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-display: var(--font-system);
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
   --font-dyslexic: 'OpenDyslexic', sans-serif;
   --font-atkinson: 'Atkinson Hyperlegible', sans-serif;
 
@@ -96,9 +118,15 @@
 
   --reader-max-width: 680px;
 
-  --transition-fast: 120ms ease;
-  --transition-base: 220ms ease;
-  --transition-slow: 380ms ease;
+  --transition-fast: 150ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-base: 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-slow: 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
 }
 
 /* ============================================================
@@ -122,10 +150,11 @@ body {
   line-height: var(--line-height-relaxed);
   transition: background-color var(--transition-base), color var(--transition-base);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ============================================================
-   Font family overrides
+   Font family overrides (accessibility)
    ============================================================ */
 [data-font="dyslexic"] body,
 [data-font="dyslexic"] {
@@ -146,20 +175,56 @@ body {
 }
 
 /* ============================================================
-   Animations
+   Focus rings (accessibility)
    ============================================================ */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px var(--glow-color); }
-  50% { box-shadow: 0 0 40px var(--glow-color-strong); }
+:focus-visible {
+  outline: 2.5px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2.5px solid var(--accent);
+  outline-offset: 2px;
 }
 
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   Selection
+   ============================================================ */
+::selection {
+  background: var(--accent-subtle);
+  color: var(--text);
+}
+
+/* ============================================================
+   Scrollbar (subtle)
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }

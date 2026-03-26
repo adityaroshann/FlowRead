@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/Users/adity/OneDrive/Documents/Projects/flowread/backend/*.py /c/Users/adity/OneDrive/Documents/Projects/flowread/backend/routers/*.py /c/Users/adity/OneDrive/Documents/Projects/flowread/backend/utils/*.py)",
+      "Bash(npm install:*)",
+      "Bash(npm list:*)",
+      "Bash(npx vite:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s http://localhost:8000/api/health)",
+      "Bash(netstat -ano)",
+      "Bash(curl -s http://localhost:8001/api/health)",
+      "Bash(venv/Scripts/python.exe -m uvicorn main:app --reload --port 8001)"
+    ]
+  }
+}
