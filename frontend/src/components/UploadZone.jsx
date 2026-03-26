@@ -19,7 +19,7 @@ export default function UploadZone({ onContent }) {
     try {
       const data = await extractFile(file);
       const allParagraphs = data.pages.flatMap((p) => p.paragraphs);
-      onContent({ title: data.title, paragraphs: allParagraphs, source: 'file' });
+      onContent({ title: data.title, paragraphs: allParagraphs, pages: data.pages, source: 'file' });
     } catch (err) {
       setError(err.response?.data?.detail || 'Could not read file. Try a PDF, DOCX, or TXT.');
     } finally {

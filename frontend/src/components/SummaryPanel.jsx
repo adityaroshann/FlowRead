@@ -56,7 +56,7 @@ export default function SummaryPanel({ open, onClose, summary, rawStream, loadin
 
             {!summary && !loading && !rawStream && (
               <button onClick={onSummarize} style={primaryBtnStyle}>
-                ✨ Generate Summary
+                Generate Summary
               </button>
             )}
 
@@ -129,7 +129,7 @@ export default function SummaryPanel({ open, onClose, summary, rawStream, loadin
                     color: 'var(--text-muted)',
                     fontFamily: 'var(--font-mono)',
                   }}>
-                    🕐 {summary.readingTimeMinutes} min read
+                    {summary.readingTimeMinutes} min read · {summary.bullets?.length} key points
                   </div>
                 )}
 
@@ -141,7 +141,19 @@ export default function SummaryPanel({ open, onClose, summary, rawStream, loadin
             )}
 
             {error && (
-              <p style={{ color: '#E53E3E', fontSize: '0.875rem' }}>{error}</p>
+              <div style={{
+                background: 'rgba(229, 62, 62, 0.08)',
+                border: '1px solid rgba(229, 62, 62, 0.3)',
+                borderRadius: 8,
+                padding: '1rem',
+              }}>
+                <p style={{ color: '#E53E3E', fontSize: '0.875rem', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+                  {error}
+                </p>
+                <button onClick={onSummarize} style={{ ...primaryBtnStyle, background: '#E53E3E', color: '#fff' }}>
+                  Try again
+                </button>
+              </div>
             )}
           </motion.aside>
         </>

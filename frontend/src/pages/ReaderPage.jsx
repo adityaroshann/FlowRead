@@ -247,6 +247,8 @@ export default function ReaderPage() {
               <BionicReader
                 paragraphsHtml={paragraphsHtml}
                 originalParagraphs={content.paragraphs}
+                pages={content.pages}
+                source={content.source}
                 fontSize={settings.fontSize}
                 lineHeight={settings.lineHeight}
                 fontFamily={settings.fontFamily}
