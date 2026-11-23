@@ -6,7 +6,7 @@ export const WORDS_PER_MINUTE = 200;
 const WORD_RE = /[^\s]+/g;
 
 export function wordCount(text) {
-  if (!text) return 0;
+  if (typeof text !== 'string' || !text) return 0;
   const m = String(text).match(WORD_RE);
   return m ? m.length : 0;
 }
@@ -37,7 +37,11 @@ export function blockText(block) {
   }
 }
 
-/** Words that count toward reading time and the `section-too-long` rule. */
+/**
+ * Words that count toward reading time and the `section-too-long` rule.
+ * Mirrors backend/access/check.py `_block_words`: heading/paragraph text,
+ * list items, table caption + headers + cells, math text, image caption.
+ */
 export function blockWordCount(block) {
   if (!block) return 0;
   switch (block.type) {
@@ -48,19 +52,27 @@ export function blockWordCount(block) {
       return (block.items || []).reduce((n, it) => n + wordCount(it), 0);
     case 'table':
       return (
+        wordCount(block.caption) +
         (block.headers || []).reduce((n, h) => n + wordCount(h), 0) +
         (block.rows || []).reduce(
           (n, row) => n + (row || []).reduce((m, c) => m + wordCount(c), 0),
           0,
         )
       );
+    case 'math':
+      return wordCount(block.text);
+    case 'image':
+      return wordCount(block.caption);
     default:
       return 0;
   }
 }
 
+/** Section heading + all block words (same as the backend checker). */
 export function sectionWordCount(section) {
-  return (section?.blocks || []).reduce((n, b) => n + blockWordCount(b), 0);
+  return (
+    wordCount(section?.heading) + (section?.blocks || []).reduce((n, b) => n + blockWordCount(b), 0)
+  );
 }
 
 /** Section heading + readable text, used for summaries. */

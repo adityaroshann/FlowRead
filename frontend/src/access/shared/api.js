@@ -12,7 +12,7 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     this.status = status;
     this.detail = detail;
-    // 0 = network failure, 503 = AI features off (no key), 502/504 = upstream
+    // 0 = network failure, 503 = AI off (no API key), 502 = AI call failed, 504 = timeout
     this.unavailable = status === 0 || status === 503 || status === 502 || status === 504;
   }
 }
@@ -174,4 +174,19 @@ export async function describeImage(src, context = '', opts) {
 /** Server-side report (the frontend can also use checkDoc from check.js). */
 export async function checkDocRemote(doc, opts) {
   return postJson('/check', doc, opts);
+}
+
+/**
+ * getHealth() -> Promise<{ status: string, ai: boolean }>
+ * Never throws: an unreachable backend resolves to { status: 'offline', ai: false }.
+ */
+export async function getHealth({ signal } = {}) {
+  try {
+    const resp = await fetch(url('/health'), { headers: { Accept: 'application/json' }, signal });
+    if (!resp.ok) return { status: 'error', ai: false };
+    const data = await resp.json();
+    return { status: String(data?.status || 'ok'), ai: !!data?.ai };
+  } catch {
+    return { status: 'offline', ai: false };
+  }
 }

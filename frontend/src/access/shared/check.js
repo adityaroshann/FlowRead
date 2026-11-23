@@ -11,9 +11,12 @@
 //                                  section heading and each heading block in
 //                                  document order, level > previous + 1
 //  - table-no-headers    serious   table with headers empty/absent
-//  - section-too-long    minor     section word count > 1500 (words in
-//                                  paragraphs, heading blocks, list items,
-//                                  table headers and cells)
+//  - section-too-long    minor     section word count > 1500: section heading,
+//                                  heading/paragraph text, list items, table
+//                                  caption + headers + cells, math text,
+//                                  image caption
+// Issue order: doc-level, then per section: its heading issue, its block
+// issues in order, then its section-too-long issue.
 //  - math-no-spoken      moderate  math block with spoken empty/whitespace
 // Score = max(0, 100 - 15*critical - 8*serious - 4*moderate - 1*minor)
 
@@ -66,7 +69,7 @@ export function checkDoc(doc) {
       const lvl = Number(sec.level) || 2;
       if (lvl > prevLevel + 1) {
         issues.push(
-          issue('heading-skip', sid, null, `Heading "${sec.heading.trim()}" jumps from level ${prevLevel} to level ${lvl}.`),
+          issue('heading-skip', sid, null, `Heading level jumps from h${prevLevel} to h${lvl}.`),
         );
       }
       prevLevel = lvl;
@@ -79,7 +82,7 @@ export function checkDoc(doc) {
           const lvl = Number(b.level) || 2;
           if (lvl > prevLevel + 1) {
             issues.push(
-              issue('heading-skip', sid, bid, `Heading "${(b.text || '').trim()}" jumps from level ${prevLevel} to level ${lvl}.`),
+              issue('heading-skip', sid, bid, `Heading level jumps from h${prevLevel} to h${lvl}.`),
             );
           }
           prevLevel = lvl;
@@ -88,20 +91,21 @@ export function checkDoc(doc) {
         case 'image': {
           if (b.altStatus === 'decorative') break;
           if (b.altStatus === 'missing' || blank(b.alt)) {
-            issues.push(issue('image-alt-missing', sid, bid, 'Image has no description (alt text).'));
+            issues.push(issue('image-alt-missing', sid, bid, 'Image has no text alternative.'));
           } else if (b.altStatus === 'ai') {
             issues.push(issue('image-alt-unreviewed', sid, bid, 'AI image description has not been reviewed by staff.'));
           }
           break;
         }
         case 'table': {
-          if (!Array.isArray(b.headers) || b.headers.length === 0) {
+          const h = b.headers;
+          if (!h || (typeof h === 'object' && Object.keys(h).length === 0)) {
             issues.push(issue('table-no-headers', sid, bid, 'Table has no header row.'));
           }
           break;
         }
         case 'math': {
-          if (blank(b.spoken)) issues.push(issue('math-no-spoken', sid, bid, 'Math has no spoken (plain-English) version.'));
+          if (blank(b.spoken)) issues.push(issue('math-no-spoken', sid, bid, 'Maths expression has no spoken description.'));
           break;
         }
         default:
@@ -112,7 +116,7 @@ export function checkDoc(doc) {
     const words = sectionWordCount(sec);
     if (words > SECTION_WORD_LIMIT) {
       issues.push(
-        issue('section-too-long', sid, null, `Section is about ${words} words; consider splitting it (over ${SECTION_WORD_LIMIT}).`),
+        issue('section-too-long', sid, null, `Section is ${words} words long. Consider splitting it (over ${SECTION_WORD_LIMIT} words).`),
       );
     }
   }
