@@ -284,6 +284,7 @@ function Heading({ level, id, children, className }) {
  *    (list items use `${blockId}:${index}`, section headings `sec:${id}`)
  *  - showTitle? (default true): render doc.title as the only <h1>
  *  - titleId?: id for the <h1>
+ *  - afterTitle?: node rendered right after the <h1> (meta, toolbars)
  *  - renderBeforeBlocks?: (section, index) => node, rendered after a section heading
  *  - className?: extra class on the root <article>
  */
@@ -295,6 +296,7 @@ export default function DocRenderer({
   highlight = null,
   showTitle = true,
   titleId,
+  afterTitle = null,
   renderBeforeBlocks,
   className = '',
 }) {
@@ -319,6 +321,7 @@ export default function DocRenderer({
           {doc.title || 'Untitled document'}
         </h1>
       )}
+      {afterTitle}
       {shown.map((sec) => {
         const index = all.indexOf(sec);
         const lvl = levels.get(`sec:${sec.id}`);
