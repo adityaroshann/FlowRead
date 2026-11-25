@@ -4,7 +4,7 @@
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.133-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Claude](https://img.shields.io/badge/Claude-Haiku-7C3AED?style=for-the-badge)](https://anthropic.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=for-the-badge)](LICENSE)
 
 > An accessibility-first web app that transforms any document, PDF, or URL into a beautifully formatted, ADHD/dyslexia-friendly reading experience using bionic text rendering and AI-powered summarization.
 
@@ -128,4 +128,8 @@ Add these secrets to your repo (`Settings → Secrets`):
 
 ## License
 
-MIT © [Aditya Roshan](https://github.com/adityaroshann)
+Copyright © 2026 [Aditya Roshan](https://github.com/adityaroshann).
+
+FlowRead is free software under the [GNU Affero General Public License v3.0](LICENSE). If you run a modified version as a network service, you must offer its source code to its users.
+
+Bundled fonts (Atkinson Hyperlegible Next, Lexend, Literata, Fraunces, OpenDyslexic) are under the SIL Open Font License 1.1; see each font's `OFL.txt`.
