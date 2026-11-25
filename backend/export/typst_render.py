@@ -422,6 +422,10 @@ TEMPLATE = r"""
 #set figure(numbering: none)
 #show figure.caption: set text(size: 0.9em)
 #show heading: set text(font: S.hfonts, weight: 700, fill: rgb(S.text))
+// Large type needs far less letter spacing than body text: cap heading
+// tracking at a third of the body's absolute spacing so wide-spacing profiles
+// don't pull headings apart letter by letter.
+#show heading: set text(tracking: S.tracking * S.size * 0.33pt)
 #show heading: set block(above: 1.5em, below: 0.75em)
 #show heading.where(level: 1): set text(size: 1.9em)
 #show heading.where(level: 2): set text(size: 1.45em)
