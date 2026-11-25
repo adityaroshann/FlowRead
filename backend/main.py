@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from routers import transform, extract, scrape, summarize, access
+from routers import transform, extract, scrape, summarize, access, export
 
 app = FastAPI(title="FlowRead API", version="1.0.0")
 
@@ -26,6 +26,7 @@ app.include_router(extract.router, prefix="/api")
 app.include_router(scrape.router, prefix="/api")
 app.include_router(summarize.router, prefix="/api")
 app.include_router(access.router, prefix="/api/access")
+app.include_router(export.router, prefix="/api/export")
 
 
 @app.get("/api/health")
