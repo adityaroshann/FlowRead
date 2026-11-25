@@ -4,7 +4,7 @@ import { useDropzone } from 'react-dropzone';
 import { ArrowLeft, Upload, FileText, X, Check, Circle, LoaderCircle, TriangleAlert, BookOpen } from 'lucide-react';
 import StaffShell from './StaffShell';
 import { convertFile } from '../shared/api';
-import { saveDoc, getDoc } from '../shared/storage';
+import { saveDoc, getDoc, saveSource } from '../shared/storage';
 import { seedSampleDoc } from '../shared/sampleDoc';
 import { checkDoc } from '../shared/check';
 import { describeConvertError } from './staffUtils';
@@ -13,6 +13,7 @@ const MAX_SIZE = 25 * 1024 * 1024;
 const ACCEPT = {
   'application/pdf': ['.pdf'],
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
 };
 
 const STEPS = [
@@ -40,7 +41,7 @@ export default function NewConversion() {
   const statusRef = useRef(null);
 
   useEffect(() => {
-    document.title = 'New conversion · FlowRead Access';
+    document.title = 'New conversion · FlowRead';
     return () => {
       runRef.current += 1; // ignore results that arrive after leaving the page
     };
@@ -59,8 +60,8 @@ export default function NewConversion() {
         code === 'file-too-large'
           ? { title: 'File is too large', detail: 'Files must be 25 MB or smaller.' }
           : code === 'too-many-files'
-            ? { title: 'One file at a time', detail: 'Choose a single PDF or DOCX file.' }
-            : { title: 'File type not supported', detail: 'Upload a PDF (.pdf) or Word document (.docx).' }
+            ? { title: 'One file at a time', detail: 'Choose a single PDF, DOCX or PPTX file.' }
+            : { title: 'File type not supported', detail: 'Upload a PDF (.pdf), Word document (.docx) or PowerPoint deck (.pptx).' }
       );
       return;
     }
@@ -118,13 +119,16 @@ export default function NewConversion() {
       } catch {
         /* keep the backend report */
       }
-      saveDoc({ ...doc, report });
+      const lower = file.name.toLowerCase();
+      const kind = lower.endsWith('.pdf') ? 'pdf' : lower.endsWith('.pptx') ? 'pptx' : 'docx';
+      await saveDoc({ ...doc, report, source: doc.source || { kind, pages: null, url: null } });
+      if (kind === 'pdf') await saveSource(doc.id, file).catch(() => {});
     } catch (err) {
       setPhase('error');
       setError(describeConvertError(err?.message ? err : new Error('Storage full')));
       return;
     }
-    navigate(`/access/review/${encodeURIComponent(doc.id)}`);
+    navigate(`/workspace/review/${encodeURIComponent(doc.id)}`);
   };
 
   const cancel = () => {
@@ -133,11 +137,11 @@ export default function NewConversion() {
     setProgress({ step: null, message: '', pct: 0 });
   };
 
-  const openSample = () => {
+  const openSample = async () => {
     try {
-      seedSampleDoc();
-      if (!getDoc('doc_sample')) throw new Error('Storage full');
-      navigate('/access/review/doc_sample');
+      await seedSampleDoc();
+      if (!(await getDoc('doc_sample'))) throw new Error('Storage full');
+      navigate('/workspace/review/doc_sample');
     } catch (err) {
       setError(describeConvertError(err));
     }
@@ -149,13 +153,13 @@ export default function NewConversion() {
   return (
     <StaffShell>
       <div className="fa-narrow">
-        <Link to="/access" className="fa-backlink">
+        <Link to="/workspace" className="fa-backlink">
           <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
         </Link>
         <div>
           <h1>Convert a document</h1>
           <p className="fa-hint" style={{ fontSize: '1rem', marginTop: '0.4rem' }}>
-            PDF or Word (.docx), up to 25 MB. You will review the result before anything is published.
+            PDF, Word (.docx) or PowerPoint (.pptx), up to 25 MB. You will review the result before anything is published.
           </p>
         </div>
 
@@ -167,7 +171,7 @@ export default function NewConversion() {
                 onClick: open,
               })}
             >
-              <input {...getInputProps({ id: 'fa-file-input', 'aria-label': 'Choose a PDF or DOCX file', 'aria-describedby': 'fa-file-hint' })} />
+              <input {...getInputProps({ id: 'fa-file-input', 'aria-label': 'Choose a PDF, DOCX or PPTX file', 'aria-describedby': 'fa-file-hint' })} />
               <Upload className="fa-drop__icon" size={32} aria-hidden="true" />
               <p className="fa-drop__title" aria-hidden="true">
                 {isDragActive ? 'Drop the file to add it' : 'Drag a file here'}

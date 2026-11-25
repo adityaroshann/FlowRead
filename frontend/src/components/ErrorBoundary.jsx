@@ -3,53 +3,27 @@ import { Component } from 'react';
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{
-          minHeight: '100dvh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--bg)',
-          color: 'var(--text)',
-          padding: '2rem',
-          textAlign: 'center',
-          gap: '1rem',
-        }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 600 }}>
-            Something went wrong
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: 400 }}>
-            An unexpected error occurred. Try reloading the page.
+        <main className="page error-page" id="main">
+          <h1 className="display">Something went wrong</h1>
+          <p>This page stopped working. Your documents are still saved in this browser.</p>
+          <p>
+            <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>
+              Reload the page
+            </button>
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '0.6rem 1.5rem',
-              background: 'var(--accent)',
-              color: '#1A1A1A',
-              border: 'none',
-              borderRadius: 8,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-            }}
-          >
-            Reload
-          </button>
-        </div>
+        </main>
       );
     }
-
     return this.props.children;
   }
 }

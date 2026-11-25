@@ -1,0 +1,201 @@
+.imp {
+  background: var(--raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+  box-shadow: var(--sh-1);
+  padding: var(--s-4);
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+}
+[data-ui-theme='high-contrast'] .imp {
+  border-color: var(--line);
+}
+
+.imp-tabs {
+  display: grid;
+  gap: var(--s-4);
+}
+.imp-panel {
+  min-height: 15.5rem;
+  display: grid;
+}
+
+.imp-drop {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: var(--s-2);
+  text-align: center;
+  padding: var(--s-6) var(--s-4);
+  border: 1.5px dashed var(--line);
+  border-radius: var(--r-2);
+  background: var(--paper);
+  transition: background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+.imp-drop.is-drag {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-tint);
+}
+.imp-drop-icon {
+  color: var(--accent);
+  margin-bottom: var(--s-1);
+}
+.imp-drop-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--t-md);
+}
+.imp-drop .hint {
+  max-width: 30ch;
+  margin-bottom: var(--s-3);
+}
+
+.imp-form {
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+}
+.imp-optional {
+  font-weight: 400;
+  color: var(--muted);
+}
+.imp-inline {
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+.imp-inline .input {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+.imp-field-error {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--danger);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+.imp-error {
+  align-items: center;
+}
+.imp-error > div {
+  flex: 1;
+}
+
+/* Progress */
+.imp-progress {
+  display: grid;
+  gap: var(--s-4);
+  min-height: 19rem;
+  align-content: start;
+  padding: var(--s-2) var(--s-1);
+}
+.imp-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+.imp-progress-title {
+  margin: 0;
+  font-size: var(--t-md);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.imp-clock {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+.imp-meter-wait {
+  animation: imp-breathe 1.6s var(--ease) infinite alternate;
+}
+@keyframes imp-breathe {
+  from {
+    opacity: 0.45;
+  }
+}
+.imp-waking {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-2);
+  background: var(--accent-tint);
+  font-size: var(--t-sm);
+  animation: rise-in var(--dur-2) var(--ease);
+}
+.imp-waking svg {
+  flex: none;
+  color: var(--accent);
+  margin-top: 2px;
+}
+.imp-waking p {
+  margin: 0;
+}
+.imp-waking-title {
+  font-weight: 700;
+  margin-bottom: 2px !important;
+}
+[data-ui-theme='high-contrast'] .imp-waking {
+  border: 1px solid var(--line);
+}
+
+.imp-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+.imp-step {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: var(--s-3);
+  align-items: start;
+  font-size: var(--t-sm);
+  color: var(--muted);
+}
+.imp-step.is-done,
+.imp-step.is-active {
+  color: var(--ink);
+}
+.imp-step.is-active {
+  font-weight: 700;
+}
+.imp-step-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+}
+.imp-step.is-done .imp-step-icon {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.imp-step.is-active .imp-step-icon {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.imp-step-msg {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.imp-opening {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  min-height: 19rem;
+  justify-content: center;
+  color: var(--muted);
+}

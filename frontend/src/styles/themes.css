@@ -1,230 +1,289 @@
-/* ============================================================
-   FlowRead — Design Tokens & Theme System
-   Forest / sage green, warm, calm reading aesthetic
-   ============================================================ */
+/* ==========================================================================
+   FlowRead design tokens. "Warm editorial, calm tool."
 
-:root,
-[data-theme="cream"] {
-  --bg: #FAFAF8;
-  --bg-surface: #F0EEEA;
-  --bg-elevated: #FFFFFF;
-  --text: #1A1D1A;
-  --text-muted: #7A7F76;
-  --text-secondary: #5C6158;
-  --accent: #4A7C59;
-  --accent-hover: #3D6B4A;
-  --accent-light: #5E9E6E;
-  --accent-subtle: rgba(74, 124, 89, 0.08);
-  --accent-glow: rgba(74, 124, 89, 0.12);
-  --border: rgba(0, 0, 0, 0.06);
-  --border-strong: rgba(0, 0, 0, 0.1);
-  --panel-bg: rgba(255, 255, 255, 0.88);
-  --bold-color: inherit;
-  --shadow-sm: 0 1px 2px rgba(26, 29, 26, 0.04);
-  --shadow-md: 0 4px 12px rgba(26, 29, 26, 0.06);
-  --shadow-lg: 0 8px 30px rgba(26, 29, 26, 0.08);
-  --shadow-toolbar: 0 2px 24px rgba(26, 29, 26, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --warm-tint: rgba(200, 180, 140, 0.04);
-}
+   The interface follows the reader's chosen theme, set on <html> as
+   data-ui-theme = light (Paper) | cream (Sepia) | dark (Dusk) | high-contrast.
+   Reading-surface colours match THEME_COLORS in packages/core/src/readingCss.js
+   exactly, so the app, the extension and exported PDFs look the same.
 
-[data-theme="dark"] {
-  --bg: #101210;
-  --bg-surface: #1A1E1A;
-  --bg-elevated: #222622;
-  --text: #E8EAE5;
-  --text-muted: #8A8E86;
-  --text-secondary: #A0A59C;
-  --accent: #6BBF7E;
-  --accent-hover: #7DCF8F;
-  --accent-light: #8FD89E;
-  --accent-subtle: rgba(107, 191, 126, 0.1);
-  --accent-glow: rgba(107, 191, 126, 0.08);
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.1);
-  --panel-bg: rgba(26, 30, 26, 0.92);
-  --bold-color: inherit;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
-  --shadow-toolbar: 0 2px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --warm-tint: rgba(0, 0, 0, 0);
-}
+   Every text pair is at least 4.5:1; --line (component borders) is at least
+   3:1 against --paper and --surface.
+   ========================================================================== */
 
-[data-theme="sepia"] {
-  --bg: #F7F3EC;
-  --bg-surface: #EDE8DF;
-  --bg-elevated: #FBF8F3;
-  --text: #3B3428;
-  --text-muted: #8A7E6E;
-  --text-secondary: #6E6456;
-  --accent: #5A7A4E;
-  --accent-hover: #4D6C42;
-  --accent-light: #6E9460;
-  --accent-subtle: rgba(90, 122, 78, 0.08);
-  --accent-glow: rgba(90, 122, 78, 0.1);
-  --border: rgba(0, 0, 0, 0.06);
-  --border-strong: rgba(0, 0, 0, 0.09);
-  --panel-bg: rgba(251, 248, 243, 0.9);
-  --bold-color: inherit;
-  --shadow-sm: 0 1px 2px rgba(59, 52, 40, 0.04);
-  --shadow-md: 0 4px 12px rgba(59, 52, 40, 0.06);
-  --shadow-lg: 0 8px 30px rgba(59, 52, 40, 0.08);
-  --shadow-toolbar: 0 2px 24px rgba(59, 52, 40, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --warm-tint: rgba(200, 170, 120, 0.06);
-}
-
-[data-theme="high-contrast"] {
-  --bg: #000000;
-  --bg-surface: #0A0A0A;
-  --bg-elevated: #141414;
-  --text: #FFFFFF;
-  --text-muted: #CCCCCC;
-  --text-secondary: #BBBBBB;
-  --accent: #3CFF6E;
-  --accent-hover: #5CFF88;
-  --accent-light: #7CFFA0;
-  --accent-subtle: rgba(60, 255, 110, 0.1);
-  --accent-glow: rgba(60, 255, 110, 0.08);
-  --border: #444444;
-  --border-strong: #555555;
-  --panel-bg: rgba(20, 20, 20, 0.95);
-  --bold-color: #3CFF6E;
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-  --shadow-toolbar: 0 0 0 2px #444;
-  --warm-tint: rgba(0, 0, 0, 0);
-}
-
-/* ============================================================
-   Typography
-   ============================================================ */
 :root {
-  --font-system: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Literata', Georgia, serif;
-  --font-display: var(--font-system);
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
-  --font-dyslexic: 'OpenDyslexic', sans-serif;
-  --font-atkinson: 'Atkinson Hyperlegible', sans-serif;
+  /* Type */
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  --font-ui: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-system: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-atkinson: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible';
+  --font-lexend: 'Lexend Variable', 'Lexend';
+  --font-dyslexic: 'OpenDyslexic';
+  --font-body: 'Literata Variable', 'Literata';
+  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
-  --font-size-sm: 0.9rem;
-  --font-size-md: 1.05rem;
-  --font-size-lg: 1.2rem;
-  --font-size-xl: 1.4rem;
+  /* Type scale (1.25, 16px base) */
+  --t-xs: 0.8125rem;
+  --t-sm: 0.875rem;
+  --t-base: 1rem;
+  --t-md: 1.125rem;
+  --t-lg: 1.375rem;
+  --t-xl: 1.75rem;
+  --t-2xl: 2.25rem;
+  --t-3xl: clamp(2.375rem, 1.6rem + 3.4vw, 3.75rem);
 
-  --line-height-normal: 1.6;
-  --line-height-relaxed: 1.85;
-  --line-height-spacious: 2.1;
+  /* Spacing: 4/8 rhythm */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
 
-  --reader-max-width: 680px;
+  /* Radius: small things are tighter, big surfaces softer */
+  --r-1: 4px;
+  --r-2: 8px;
+  --r-3: 12px;
+  --r-4: 20px;
+  --r-pill: 999px;
 
-  --transition-fast: 150ms cubic-bezier(0.25, 0.1, 0.25, 1);
-  --transition-base: 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
-  --transition-slow: 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-1: 120ms;
+  --dur-2: 180ms;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
+  --measure: 66ch;
+  --header-h: 60px;
+  --focus-w: 3px;
 }
 
-/* ============================================================
-   Global Reset
-   ============================================================ */
-*, *::before, *::after {
+/* ---------- Paper (light) ---------- */
+:root,
+[data-ui-theme='light'] {
+  --paper: #FAF7F0;
+  --surface: #F2EDE3;
+  --raised: #FFFDF8;
+  --ink: #1F1B16;
+  --muted: #5C554B;
+  --accent: #0F6B6B;
+  --accent-strong: #0B5656;
+  --on-accent: #FFFFFF;
+  --accent-tint: rgba(15, 107, 107, 0.09);
+  --mark: #FFE58A;
+  --mark-ink: #1F1B16;
+  --rule: #E4DDD0;
+  --line: #8F8576;
+  --focus: #0F6B6B;
+  --danger: #A3261E;
+  --danger-tint: #F8E6E2;
+  --ok: #2E6A3D;
+  --scrim: rgba(31, 27, 22, 0.32);
+  --sh-1: 0 1px 2px rgba(31, 27, 22, 0.06);
+  --sh-2: 0 1px 2px rgba(31, 27, 22, 0.05), 0 12px 32px -12px rgba(31, 27, 22, 0.22);
+  --sh-3: 0 2px 4px rgba(31, 27, 22, 0.05), 0 24px 64px -16px rgba(31, 27, 22, 0.3);
+  color-scheme: light;
+}
+
+/* ---------- Sepia (cream) ---------- */
+[data-ui-theme='cream'] {
+  --paper: #F4ECD8;
+  --surface: #EADFC6;
+  --raised: #FAF4E6;
+  --ink: #2B2418;
+  --muted: #5A4E3B;
+  --accent: #0F5F5F;
+  --accent-strong: #0A4C4C;
+  --on-accent: #FFFFFF;
+  --accent-tint: rgba(15, 95, 95, 0.1);
+  --mark: #FFE08A;
+  --mark-ink: #2B2418;
+  --rule: #DCCFB2;
+  --line: #85775D;
+  --focus: #0F5F5F;
+  --danger: #9A2419;
+  --danger-tint: #F3DDD3;
+  --ok: #2E6A3D;
+  --scrim: rgba(43, 36, 24, 0.34);
+  --sh-1: 0 1px 2px rgba(43, 36, 24, 0.07);
+  --sh-2: 0 1px 2px rgba(43, 36, 24, 0.06), 0 12px 32px -12px rgba(43, 36, 24, 0.25);
+  --sh-3: 0 2px 4px rgba(43, 36, 24, 0.06), 0 24px 64px -16px rgba(43, 36, 24, 0.32);
+  color-scheme: light;
+}
+
+/* ---------- Dusk (dark) ---------- */
+[data-ui-theme='dark'] {
+  --paper: #1C1A17;
+  --surface: #25221E;
+  --raised: #2C2924;
+  --ink: #E8E2D6;
+  --muted: #B5AC9C;
+  --accent: #6FCFC4;
+  --accent-strong: #8ADBD1;
+  --on-accent: #1C1A17;
+  --accent-tint: rgba(111, 207, 196, 0.12);
+  --mark: #5C4A12;
+  --mark-ink: #F6EEDD;
+  --rule: #38332D;
+  --line: #857C6F;
+  --focus: #6FCFC4;
+  --danger: #FFB4A8;
+  --danger-tint: #3A1F1B;
+  --ok: #95D5A4;
+  --scrim: rgba(0, 0, 0, 0.55);
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sh-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 40px -12px rgba(0, 0, 0, 0.6);
+  --sh-3: 0 2px 4px rgba(0, 0, 0, 0.3), 0 24px 64px -12px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+
+/* ---------- High contrast ---------- */
+[data-ui-theme='high-contrast'] {
+  --paper: #000000;
+  --surface: #000000;
+  --raised: #000000;
+  --ink: #FFFFFF;
+  --muted: #E6E6E6;
+  --accent: #FFE600;
+  --accent-strong: #FFF27A;
+  --on-accent: #000000;
+  --accent-tint: rgba(255, 230, 0, 0.16);
+  --mark: #00468C;
+  --mark-ink: #FFFFFF;
+  --rule: #8A8A8A;
+  --line: #FFFFFF;
+  --focus: #FFE600;
+  --danger: #FFB4A8;
+  --danger-tint: #000000;
+  --ok: #9CF0B0;
+  --scrim: rgba(0, 0, 0, 0.75);
+  --sh-1: none;
+  --sh-2: 0 0 0 2px #FFFFFF;
+  --sh-3: 0 0 0 2px #FFFFFF;
+  color-scheme: dark;
+}
+
+/* Older names, still used by the workspace (staff) styles. */
+:root {
+  --bg: var(--paper);
+  --text: var(--ink);
+  --text-secondary: var(--muted);
+  --text-muted: var(--muted);
+  --bg-surface: var(--surface);
+  --bg-elevated: var(--raised);
+  --border: var(--rule);
+}
+
+[data-focus='thick'] {
+  --focus-w: 5px;
+}
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 html {
-  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--paper);
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: var(--font-size-md);
-  line-height: var(--line-height-relaxed);
-  transition: background-color var(--transition-base), color var(--transition-base);
+  margin: 0;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-base);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  overflow-wrap: break-word;
 }
 
-/* ============================================================
-   Font family overrides (accessibility)
-   ============================================================ */
-[data-font="dyslexic"] body,
-[data-font="dyslexic"] {
-  font-family: var(--font-dyslexic);
+img,
+svg,
+canvas {
+  max-width: 100%;
 }
 
-[data-font="atkinson"] body,
-[data-font="atkinson"] {
-  font-family: var(--font-atkinson);
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
 }
 
-/* ============================================================
-   Bionic bold style
-   ============================================================ */
-.bionic-text b {
-  font-weight: 700;
-  color: var(--bold-color);
+::selection {
+  background: var(--mark);
+  color: var(--mark-ink);
 }
 
-/* ============================================================
-   Focus rings (accessibility)
-   ============================================================ */
-:focus-visible {
-  outline: 2.5px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
+:focus {
+  outline: none;
 }
-
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 2.5px solid var(--accent);
+:focus-visible,
+[data-focus-visible] {
+  outline: var(--focus-w) solid var(--focus);
   outline-offset: 2px;
 }
 
-/* ============================================================
-   Reduced motion
-   ============================================================ */
+a {
+  color: var(--accent);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Motion: OS setting and the in-app "Reduce motion" switch. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 1ms !important;
     scroll-behavior: auto !important;
   }
 }
-
-/* ============================================================
-   Selection
-   ============================================================ */
-::selection {
-  background: var(--accent-subtle);
-  color: var(--text);
+html[data-reduce-motion] *,
+html[data-reduce-motion] *::before,
+html[data-reduce-motion] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }
 
-/* ============================================================
-   Scrollbar (subtle)
-   ============================================================ */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: var(--radius-full);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
 }

@@ -1,0 +1,134 @@
+.lib-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-bottom: var(--s-5);
+  margin-bottom: var(--s-6);
+  border-bottom: 1px solid var(--rule);
+}
+.lib-title {
+  margin: 0 0 var(--s-2);
+  font-size: clamp(2.25rem, 1.8rem + 2vw, 3rem);
+}
+.lib-title:focus {
+  outline: none;
+}
+.lib-title:focus-visible {
+  outline: var(--focus-w) solid var(--focus);
+}
+.lib-sub {
+  margin: 0;
+  color: var(--muted);
+}
+
+.lib-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: var(--s-4);
+}
+
+.lib-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: var(--s-2);
+  padding: var(--s-4) var(--s-4) var(--s-3);
+  background: var(--raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+  min-width: 0;
+  transition: border-color var(--dur-1) var(--ease);
+}
+.lib-card:hover {
+  border-color: var(--line);
+}
+[data-ui-theme='high-contrast'] .lib-card {
+  border-color: var(--line);
+}
+.lib-card-kind {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--muted);
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+.lib-card-pages {
+  margin-left: auto;
+  font-weight: 400;
+}
+.lib-card-title {
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: var(--t-lg);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-variation-settings: 'opsz' 48;
+  overflow-wrap: anywhere;
+}
+.lib-card-title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.lib-card-title a:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+}
+.lib-card-meta {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--muted);
+}
+.lib-card-progress {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s-3);
+  align-items: center;
+  margin-top: var(--s-2);
+}
+.lib-card-pct {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: right;
+}
+.lib-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+}
+.lib-danger {
+  color: var(--danger);
+}
+
+.lib-empty {
+  max-width: 34rem;
+  padding: var(--s-7) 0;
+}
+.lib-empty-title {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+  font-weight: 560;
+}
+.lib-empty p {
+  margin: 0 0 var(--s-4);
+  color: var(--muted);
+}
+.lib-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}

@@ -190,3 +190,56 @@ export async function getHealth({ signal } = {}) {
     return { status: 'offline', ai: false };
   }
 }
+
+/**
+ * Pasted text -> AccessDoc. convertText(text, { title, signal })
+ * Markdown-style `#` headings and `-` / `1.` lists are recognised by the server.
+ */
+export async function convertText(text, { title = '', signal } = {}) {
+  const body = { text };
+  if (title && title.trim()) body.title = title.trim();
+  const doc = await postJson('/convert-text', body, { signal });
+  if (!doc || !Array.isArray(doc.sections)) throw new ApiError('The server did not return a document.', { status: 502 });
+  return doc;
+}
+
+/** Web link (article or PDF) -> AccessDoc. */
+export async function convertUrl(link, { signal } = {}) {
+  const doc = await postJson('/convert-url', { url: link }, { signal });
+  if (!doc || !Array.isArray(doc.sections)) throw new ApiError('The server did not return a document.', { status: 502 });
+  return doc;
+}
+
+/** define(term, context) -> Promise<string> (one or two plain sentences) */
+export async function define(term, context = '', opts) {
+  const data = await postJson('/define', { term, context: context || '' }, opts);
+  if (!data || typeof data.definition !== 'string') throw new ApiError('No definition was returned.', { status: 502 });
+  return data.definition;
+}
+
+/**
+ * Accessible tagged PDF from the export service.
+ * exportPdf(doc, settings, options, { signal }) -> Promise<Blob>
+ * options: { pageSize: 'A4'|'Letter', includeSummaries, includePlain, includePageRefs, includeToc }
+ */
+export async function exportPdf(doc, settings, options, { signal } = {}) {
+  let resp;
+  try {
+    resp = await fetch(`${API_BASE}/api/export/pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/pdf' },
+      body: JSON.stringify({ doc, settings, options }),
+      signal,
+    });
+  } catch (err) {
+    throw networkError(err);
+  }
+  if (!resp.ok) {
+    const err = await errorFromResponse(resp);
+    if (resp.status === 413) err.message = 'This document is too large for the PDF service.';
+    throw err;
+  }
+  const blob = await resp.blob();
+  if (!blob.size) throw new ApiError('The PDF service returned an empty file.', { status: resp.status });
+  return blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' });
+}

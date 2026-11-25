@@ -39,9 +39,9 @@ function scoreOf(doc) {
   }
 }
 
-function readDocs() {
+async function readDocs() {
   try {
-    const docs = listDocs() || [];
+    const docs = (await listDocs()) || [];
     return [...docs].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
   } catch {
     return [];
@@ -50,7 +50,7 @@ function readDocs() {
 
 export default function AccessLanding() {
   const navigate = useNavigate();
-  const [docs, setDocs] = useState(readDocs);
+  const [docs, setDocs] = useState([]);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [message, setMessage] = useState('');
   const [sampleError, setSampleError] = useState('');
@@ -58,15 +58,16 @@ export default function AccessLanding() {
   const listHeadingRef = useRef(null);
 
   useEffect(() => {
-    document.title = 'FlowRead Access: accessible course materials';
+    document.title = 'FlowRead for institutions: accessible course materials';
+    readDocs().then(setDocs);
   }, []);
 
-  const openSample = () => {
+  const openSample = async () => {
     setSampleError('');
     try {
-      seedSampleDoc();
-      if (!getDoc('doc_sample')) throw new Error('Storage full');
-      navigate('/access/review/doc_sample');
+      await seedSampleDoc();
+      if (!(await getDoc('doc_sample'))) throw new Error('Storage full');
+      navigate('/workspace/review/doc_sample');
     } catch (err) {
       setSampleError(
         /storage full/i.test(String(err?.message))
@@ -76,13 +77,13 @@ export default function AccessLanding() {
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     const doc = pendingDelete;
     setPendingDelete(null);
     if (!doc) return;
     try {
-      deleteDoc(doc.id);
-      setDocs(readDocs());
+      await deleteDoc(doc.id);
+      setDocs(await readDocs());
       setMessage(`Deleted “${doc.title || 'Untitled document'}”.`);
     } catch {
       setMessage('The document could not be deleted.');
@@ -94,7 +95,7 @@ export default function AccessLanding() {
   return (
     <StaffShell
       actions={
-        <Link to="/access/new" className="fa-btn fa-btn--sm">
+        <Link to="/workspace/new" className="fa-btn fa-btn--sm">
           <Upload size={16} aria-hidden="true" /> New conversion
         </Link>
       }
@@ -104,11 +105,11 @@ export default function AccessLanding() {
           <p className="fa-eyebrow">For accessibility and disability services offices</p>
           <h1 id="fa-hero-title">Accessible course materials in minutes, not days</h1>
           <p className="fa-hero__lede">
-            Upload a course PDF or Word file. FlowRead rebuilds its structure, tables and image descriptions,
+            Upload a course PDF, Word file or slide deck. FlowRead rebuilds its structure, tables and image descriptions,
             your team reviews the result, and every student gets one document that adapts to how they read.
           </p>
           <div className="fa-btnrow">
-            <Link to="/access/new" className="fa-btn fa-btn--primary fa-btn--lg">
+            <Link to="/workspace/new" className="fa-btn fa-btn--primary fa-btn--lg">
               <Upload size={18} aria-hidden="true" /> Convert a document
             </Link>
             <button type="button" className="fa-btn fa-btn--lg" onClick={openSample}>
@@ -150,7 +151,7 @@ export default function AccessLanding() {
           <ol className="fa-steps">
             <li>
               <h3>Upload</h3>
-              <p>Add a PDF or DOCX up to 25 MB. FlowRead reads the layout, finds tables and drafts image descriptions.</p>
+              <p>Add a PDF, DOCX or PPTX up to 25 MB. FlowRead reads the layout, finds tables and drafts image descriptions.</p>
             </li>
             <li>
               <h3>Review</h3>
@@ -191,7 +192,7 @@ export default function AccessLanding() {
                       </p>
                     </div>
                     <div className="fa-btnrow">
-                      <Link to={`/access/review/${encodeURIComponent(doc.id)}`} className="fa-btn fa-btn--sm">
+                      <Link to={`/workspace/review/${encodeURIComponent(doc.id)}`} className="fa-btn fa-btn--sm">
                         <FolderOpen size={16} aria-hidden="true" /> Open<span className="fa-visually-hidden"> {title}</span>
                       </Link>
                       <button

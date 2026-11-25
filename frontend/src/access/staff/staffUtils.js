@@ -171,7 +171,7 @@ export function describeConvertError(err) {
     return { title: 'File is too large', detail: 'Files must be 25 MB or smaller. Split or compress the file and try again.' };
   }
   if (status === 415 || /\b415\b|unsupported/i.test(msg)) {
-    return { title: 'File type not supported', detail: 'Upload a PDF (.pdf) or Word document (.docx).' };
+    return { title: 'File type not supported', detail: 'Upload a PDF (.pdf), Word document (.docx) or PowerPoint deck (.pptx).' };
   }
   if (err?.name === 'TypeError' || /failed to fetch|networkerror|load failed|network/i.test(msg)) {
     return {

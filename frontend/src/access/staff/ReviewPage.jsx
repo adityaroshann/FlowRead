@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, CloudOff, Copy, Download, ExternalLink, LoaderCircle, Send, TriangleAlert, Upload } from 'lucide-react';
+import { ArrowLeft, BookOpen, Check, CloudOff, Copy, Download, ExternalLink, LoaderCircle, Send, TriangleAlert, Upload } from 'lucide-react';
 import StaffShell from './StaffShell';
 import Dialog from './Dialog';
 import ReportPanel from './ReportPanel';
@@ -47,15 +47,15 @@ function prefersReducedMotion() {
 
 export default function ReviewPage() {
   const { id } = useParams();
-  return <ReviewWorkspace key={id} id={id} />;
+  return <ReviewWorkspace key={id} id={id} mode="workspace" />;
 }
 
-function NotFound({ id }) {
+function NotFound({ id, mode }) {
   useEffect(() => {
-    document.title = 'Document not found · FlowRead Access';
+    document.title = 'Document not found · FlowRead';
   }, []);
   return (
-    <StaffShell>
+    <StaffShell mode={mode}>
       <div className="fa-centered">
         <h1>Document not found</h1>
         <p>
@@ -63,11 +63,11 @@ function NotFound({ id }) {
           browser where they were converted.
         </p>
         <div className="fa-btnrow">
-          <Link to="/access" className="fa-btn">
-            <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
+          <Link to={mode === 'personal' ? '/library' : '/workspace'} className="fa-btn">
+            <ArrowLeft size={16} aria-hidden="true" /> {mode === 'personal' ? 'Back to library' : 'Back to workspace'}
           </Link>
-          <Link to="/access/new" className="fa-btn fa-btn--primary">
-            <Upload size={16} aria-hidden="true" /> Convert a document
+          <Link to={mode === 'personal' ? '/' : '/workspace/new'} className="fa-btn fa-btn--primary">
+            <Upload size={16} aria-hidden="true" /> {mode === 'personal' ? 'Import a document' : 'Convert a document'}
           </Link>
         </div>
       </div>
@@ -75,13 +75,32 @@ function NotFound({ id }) {
   );
 }
 
-function ReviewWorkspace({ id }) {
-  const [doc] = useState(() => getDoc(id));
-  if (!doc) return <NotFound id={id} />;
-  return <Workspace initialDoc={doc} />;
+export function ReviewWorkspace({ id, mode = 'workspace' }) {
+  const [loaded, setLoaded] = useState({ id: null, doc: null });
+  useEffect(() => {
+    let alive = true;
+    getDoc(id).then((doc) => {
+      if (alive) setLoaded({ id, doc });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+  if (loaded.id !== id) {
+    return (
+      <StaffShell mode={mode}>
+        <p className="fa-centered" role="status">
+          Opening the document…
+        </p>
+      </StaffShell>
+    );
+  }
+  if (!loaded.doc) return <NotFound id={id} mode={mode} />;
+  return <Workspace initialDoc={loaded.doc} mode={mode} />;
 }
 
-function Workspace({ initialDoc }) {
+function Workspace({ initialDoc, mode }) {
+  const personal = mode === 'personal';
   const [doc, setDoc] = useState(initialDoc);
   const [tab, setTab] = useState('structure');
   const [profileId, setProfileId] = useState('standard');
@@ -106,24 +125,25 @@ function Workspace({ initialDoc }) {
   const imagesToReview = images.filter(({ block }) => block.altStatus === 'ai' || block.altStatus === 'missing' || !block.altStatus).length;
 
   useEffect(() => {
-    document.title = `Review: ${doc.title || 'Untitled document'} · FlowRead Access`;
-  }, [doc.title]);
+    document.title = `${personal ? 'Fix structure' : 'Review'}: ${doc.title || 'Untitled document'} · FlowRead`;
+  }, [doc.title, personal]);
 
   /* ---------- Persistence ---------- */
 
-  const persist = useCallback((d) => {
+  const persist = useCallback(async (d) => {
+    dirtyRef.current = false;
     try {
-      saveDoc({ ...d, report: safeCheck(d), updatedAt: new Date().toISOString() });
-      dirtyRef.current = false;
+      await saveDoc({ ...d, report: safeCheck(d), updatedAt: new Date().toISOString() });
       setSaveState('saved');
       setSaveError('');
       setLastSaved(new Date());
       return true;
     } catch (err) {
+      dirtyRef.current = true;
       setSaveState('error');
       setSaveError(
         /storage full/i.test(String(err?.message))
-          ? 'Not saved: browser storage is full. Delete older documents from the workspace home page, then keep editing.'
+          ? 'Not saved: browser storage is full. Delete older documents from your library, then keep editing.'
           : 'Not saved: browser storage is unavailable.'
       );
       return false;
@@ -237,10 +257,12 @@ function Workspace({ initialDoc }) {
     const next = { ...doc, publishedAt: new Date().toISOString() };
     dirtyRef.current = true;
     setDoc(next);
-    if (persist(next)) {
-      setCopied(false);
-      setPublishedOpen(true);
-    }
+    persist(next).then((ok) => {
+      if (ok) {
+        setCopied(false);
+        setPublishedOpen(true);
+      }
+    });
   };
 
   const requestPublish = () => {
@@ -287,6 +309,7 @@ function Workspace({ initialDoc }) {
 
   return (
     <StaffShell
+      mode={mode}
       actions={
         <>
           <span className={`fa-savestatus${saveState === 'error' ? ' fa-savestatus--error' : ''}`}>
@@ -299,9 +322,15 @@ function Workspace({ initialDoc }) {
             )}
             {saveLabel}
           </span>
-          <button type="button" className="fa-btn fa-btn--primary fa-btn--sm" onClick={requestPublish}>
-            <Send size={16} aria-hidden="true" /> {doc.publishedAt ? 'Republish' : 'Publish'}
-          </button>
+          {personal ? (
+            <Link to={studentPath} className="fa-btn fa-btn--primary fa-btn--sm">
+              <BookOpen size={16} aria-hidden="true" /> Back to reading
+            </Link>
+          ) : (
+            <button type="button" className="fa-btn fa-btn--primary fa-btn--sm" onClick={requestPublish}>
+              <Send size={16} aria-hidden="true" /> {doc.publishedAt ? 'Republish' : 'Publish'}
+            </button>
+          )}
         </>
       }
     >
@@ -312,13 +341,15 @@ function Workspace({ initialDoc }) {
       <div className="fa-review">
         <div className="fa-review__head">
           <div style={{ minWidth: 0 }}>
-            <Link to="/access" className="fa-backlink">
-              <ArrowLeft size={16} aria-hidden="true" /> All documents
+            <Link to={personal ? studentPath : '/workspace'} className="fa-backlink">
+              <ArrowLeft size={16} aria-hidden="true" /> {personal ? 'Back to the document' : 'All documents'}
             </Link>
-            <p className="fa-eyebrow" style={{ marginTop: '0.75rem' }}>Reviewing</p>
-            <h1>{doc.title || 'Untitled document'}</h1>
+            <h1>
+              <span className="fa-h1-kicker">{personal ? 'Fix structure' : 'Reviewing'}</span>
+              {doc.title || 'Untitled document'}
+            </h1>
             <p className="fa-review__meta">
-              {[doc.sourceFile, doc.createdAt && `Converted ${formatDate(doc.createdAt)}`, doc.publishedAt ? `Published ${formatDate(doc.publishedAt)}` : 'Not published yet']
+              {[doc.sourceFile, doc.createdAt && `Converted ${formatDate(doc.createdAt)}`, personal ? null : doc.publishedAt ? `Published ${formatDate(doc.publishedAt)}` : 'Not published yet']
                 .filter(Boolean)
                 .join(' · ')}
             </p>
@@ -333,9 +364,10 @@ function Workspace({ initialDoc }) {
         )}
 
         <div className="fa-panes">
-          <aside className="fa-side" aria-label="Accessibility check and publishing">
+          <aside className="fa-side" aria-label={personal ? 'Accessibility check' : 'Accessibility check and publishing'}>
             <ReportPanel doc={doc} report={report} onSelectIssue={onSelectIssue} />
 
+            {!personal && (
             <section className="fa-card fa-publish" aria-labelledby="fa-publish-title">
               <h2 id="fa-publish-title">Publish</h2>
               {doc.publishedAt ? (
@@ -361,6 +393,7 @@ function Workspace({ initialDoc }) {
                 )}
               </div>
             </section>
+            )}
           </aside>
 
           <div className="fa-work">

@@ -48,6 +48,7 @@ export function buildSampleDoc() {
     title: 'BIOL 1001 – Week 3: Cell Structure',
     lang: 'en',
     sourceFile: 'biol1001-week3-cell-structure.pdf',
+    source: { kind: 'pdf', pages: 5, url: null },
     createdAt: '2026-11-20T15:00:00Z',
     sections: [
       {
@@ -62,6 +63,7 @@ export function buildSampleDoc() {
             id: 'b2',
             type: 'paragraph',
             text: 'Every living organism is made of one or more cells. A cell is the smallest unit that can carry out all the processes we associate with life: taking in energy, building and breaking down molecules, responding to its surroundings and reproducing. In this unit we look inside the cell and ask how its structure supports each of these jobs.',
+            marks: [{ start: 66, end: 79, type: 'bold' }, { start: 261, end: 281, type: 'italic' }],
             plain: null,
           },
           {
@@ -289,6 +291,13 @@ export function buildSampleDoc() {
             text: 'Answers will be discussed in the Friday review session. Bring your worksheet.',
             plain: null,
           },
+          {
+            id: 'b37',
+            type: 'paragraph',
+            role: 'notes',
+            text: 'Instructor note: the worksheet is also on the course page if you lose your printed copy.',
+            plain: null,
+          },
         ],
       },
     ],
@@ -301,14 +310,14 @@ export const sampleDoc = buildSampleDoc();
 
 /**
  * Save the sample doc under id `doc_sample` (only if absent, unless force).
- * Returns the stored doc. Never throws; on storage failure it returns the
- * in-memory copy.
+ * Resolves to the stored doc. Never rejects; on storage failure it resolves
+ * to the in-memory copy.
  */
-export function seedSampleDoc({ force = false } = {}) {
+export async function seedSampleDoc({ force = false } = {}) {
   try {
-    const existing = getDoc(SAMPLE_DOC_ID);
+    const existing = await getDoc(SAMPLE_DOC_ID);
     if (existing && !force) return existing;
-    return saveDoc(buildSampleDoc());
+    return await saveDoc(buildSampleDoc());
   } catch {
     return buildSampleDoc();
   }
