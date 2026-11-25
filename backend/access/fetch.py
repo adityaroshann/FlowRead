@@ -26,7 +26,8 @@ import httpx
 MAX_BYTES = 5 * 1024 * 1024
 TIMEOUT_S = 10.0
 MAX_REDIRECTS = 3
-USER_AGENT = "Mozilla/5.0 (compatible; FlowRead/2.0; +accessibility converter)"
+# Identify the app and where to find it; sites such as Wikipedia reject anonymous bots.
+USER_AGENT = "FlowRead/2.0 (+https://github.com/adityaroshann/FlowRead; accessible reading converter)"
 
 # Tests replace these.
 _transport: httpx.AsyncBaseTransport | None = None
