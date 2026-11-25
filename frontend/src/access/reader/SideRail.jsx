@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { Label, Radio, RadioGroup, Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
-import { Check } from 'lucide-react';
-import { PROFILES, PROFILE_ORDER } from '@flowread/core/profiles.js';
+import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
+import { Check, Layers, LoaderCircle, Sparkles } from 'lucide-react';
 import { sectionLabel } from '@flowread/core/docModel.js';
-import { chooseProfile, usePrefs } from './readerPrefs.js';
-import SettingsPanel from './SettingsPanel.jsx';
+import AiBadge from '../shared/AiBadge.jsx';
 
 function Contents({ sections, current, furthest, pct, minutesLeft, onGo, pages, onGoPage, kind }) {
   const [page, setPage] = useState('');
@@ -77,52 +75,94 @@ function Contents({ sections, current, furthest, pct, minutesLeft, onGo, pages, 
   );
 }
 
-function ProfileList({ onChosen }) {
-  const prefs = usePrefs();
+function AiDidLine({ ai }) {
+  if (!ai) return null;
+  const parts = [];
+  if (ai.imagesDescribed) parts.push(`described ${ai.imagesDescribed} ${ai.imagesDescribed === 1 ? 'image' : 'images'}`);
+  if (ai.pagesRead) parts.push(`read ${ai.pagesRead} scanned ${ai.pagesRead === 1 ? 'page' : 'pages'}`);
+  if (ai.mathSpoken) parts.push(`made ${ai.mathSpoken} ${ai.mathSpoken === 1 ? 'formula' : 'formulas'} speakable`);
+  if (!parts.length) return null;
+  const text = parts.join(', ');
   return (
-    <RadioGroup
-      className="rail-profiles"
-      value={prefs.profileId}
-      onChange={(id) => {
-        chooseProfile(id);
-        onChosen?.(id);
-      }}
-    >
-      <Label className="sr-only">Reading profile</Label>
-      {PROFILE_ORDER.map((id) => (
-        <Radio key={id} value={id} className="rail-profile">
-          <span className="rail-profile-name">{PROFILES[id].label}</span>
-          <span className="rail-profile-desc">{PROFILES[id].description}</span>
-        </Radio>
-      ))}
-      <p className="hint rail-profile-note">Choosing a profile resets your adjustments to its starting point.</p>
-    </RadioGroup>
+    <p className="rail-ai-did">
+      <Sparkles size={13} aria-hidden="true" /> While converting, AI {text}.
+    </p>
   );
 }
 
-/** Contents, profile and settings. Rendered in the side rail or in a sheet on small screens. */
-export default function SideRail({ tab, onTabChange, onProfileChosen, ...contents }) {
+function SummaryPanel({ doc, section, sectionIndex, sectionSummary, onSectionSummary, docSummary, onDocSummary, onFlashcards }) {
+  const cards = doc.flashcards?.cards?.length || 0;
+  const secText = section?.summary || (sectionSummary?.status === 'done' ? sectionSummary.text : '');
+  return (
+    <div className="rail-summary">
+      <section aria-labelledby="sum-doc">
+        <h2 id="sum-doc" className="rail-h">
+          Whole document {doc.summary && <AiBadge what="This summary" />}
+        </h2>
+        {doc.summary ? (
+          <p className="rail-sum-text">{doc.summary}</p>
+        ) : (
+          <button type="button" className="btn btn-sm" onClick={onDocSummary} disabled={docSummary?.status === 'loading'}>
+            {docSummary?.status === 'loading' ? <LoaderCircle size={14} className="spin" aria-hidden="true" /> : <Sparkles size={14} aria-hidden="true" />}
+            {docSummary?.status === 'loading' ? 'Summarising…' : 'Summarise the document'}
+          </button>
+        )}
+        {docSummary?.status === 'error' && <p className="rail-sum-err" role="alert">A summary isn’t available right now.</p>}
+      </section>
+
+      {section && (
+        <section aria-labelledby="sum-sec">
+          <h2 id="sum-sec" className="rail-h">
+            This section: {sectionLabel(section, sectionIndex)} {secText && <AiBadge what="This summary" />}
+          </h2>
+          {secText ? (
+            <p className="rail-sum-text">{secText}</p>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => onSectionSummary(section)}
+              disabled={sectionSummary?.status === 'loading'}
+            >
+              {sectionSummary?.status === 'loading' ? <LoaderCircle size={14} className="spin" aria-hidden="true" /> : <Sparkles size={14} aria-hidden="true" />}
+              {sectionSummary?.status === 'loading' ? 'Summarising…' : 'Summarise this section'}
+            </button>
+          )}
+          {sectionSummary?.status === 'error' && <p className="rail-sum-err" role="alert">A summary isn’t available right now.</p>}
+        </section>
+      )}
+
+      <section aria-labelledby="sum-cards" className="rail-cards">
+        <h2 id="sum-cards" className="rail-h">
+          Check what you remember
+        </h2>
+        <button type="button" className="btn btn-sm btn-primary" onClick={onFlashcards}>
+          <Layers size={14} aria-hidden="true" /> {cards ? `Practise ${cards} flashcards` : 'Make flashcards'}
+        </button>
+      </section>
+
+      <AiDidLine ai={doc.ai} />
+    </div>
+  );
+}
+
+/** Contents and summaries. Rendered in the side rail or in a sheet on small screens. */
+export default function SideRail({ tab, onTabChange, summary, ...contents }) {
   return (
     <Tabs className="rail-tabs" selectedKey={tab} onSelectionChange={onTabChange}>
       <TabList aria-label="Reader panels" className="tabs-list rail-tablist">
         <Tab id="contents" className="tab">
           Contents
         </Tab>
-        <Tab id="profile" className="tab">
-          Profile
-        </Tab>
-        <Tab id="adjust" className="tab">
-          Adjust
+        <Tab id="summary" className="tab">
+          Summary
         </Tab>
       </TabList>
       <TabPanel id="contents" className="tab-panel rail-panel">
         <Contents {...contents} />
       </TabPanel>
-      <TabPanel id="profile" className="tab-panel rail-panel">
-        <ProfileList onChosen={onProfileChosen} />
-      </TabPanel>
-      <TabPanel id="adjust" className="tab-panel rail-panel">
-        <SettingsPanel />
+      <TabPanel id="summary" className="tab-panel rail-panel">
+        <SummaryPanel {...summary} />
       </TabPanel>
     </Tabs>
   );

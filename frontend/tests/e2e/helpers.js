@@ -1,38 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect } from '@playwright/test';
+import { settingsForProfile } from '../../../packages/core/src/profiles.js';
 
 export const PROFILES = ['standard', 'dyslexia', 'focus', 'screenreader', 'lowvision'];
 
-// Mirrors PROFILES in packages/core/src/profiles.js (with the web app's
-// Atkinson default for profiles whose preset font is "system").
-const BASE = {
-  theme: 'light',
-  font: 'atkinson',
-  textScale: 1,
-  letterSpacing: 0,
-  wordSpacing: 0,
-  lineHeight: 1.6,
-  measure: 70,
-  boldStarts: false,
-  readAloud: true,
-  plainLanguage: true,
-  focusMode: false,
-  summaries: false,
-  focusLine: false,
-  noMotion: false,
-  minimalChrome: false,
-  thickFocus: false,
-  imageDetails: true,
-  mathSpoken: false,
-  announceSections: false,
-};
-export const PROFILE_SETTINGS = {
-  standard: { ...BASE },
-  dyslexia: { ...BASE, theme: 'cream', textScale: 1.1, letterSpacing: 0.12, wordSpacing: 0.16, lineHeight: 1.8, measure: 65 },
-  focus: { ...BASE, focusMode: true, summaries: true, lineHeight: 1.7, measure: 65 },
-  screenreader: { ...BASE, minimalChrome: true, noMotion: true, readAloud: false, imageDetails: false, announceSections: true },
-  lowvision: { ...BASE, theme: 'high-contrast', textScale: 1.5, measure: 60, thickFocus: true },
-};
+// The real presets, so tests always match the app.
+export const PROFILE_SETTINGS = Object.fromEntries(PROFILES.map((id) => [id, settingsForProfile(id)]));
 
 /** Set the reading profile before any app code runs. */
 export async function usePrefs(page, profileId = 'standard', patch = {}) {

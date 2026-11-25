@@ -339,3 +339,13 @@ def test_many_undrawable_glyphs_fall_back_to_tagged_pdf():
     assert info["standard"] == "tagged"
     pdf = fitz.open(stream=data)
     assert pdf.xref_get_key(pdf.pdf_catalog(), "StructTreeRoot")[0] == "xref"
+
+
+def test_flashcards_page_is_optional():
+    d = {"title": "T", "lang": "en", "sections": [{"heading": "A", "level": 2, "blocks": [{"type": "paragraph", "text": "Hi."}]}],
+         "flashcards": {"cards": [{"front": "What is #1 [x]?", "back": "An answer with $ and *stars*."}]}}
+    without = fitz.open(stream=render_pdf(d, {}, {}))
+    assert "Flashcards" not in "".join(p.get_text() for p in without)
+    with_cards = fitz.open(stream=render_pdf(d, {}, {"includeFlashcards": True}))
+    text = "".join(p.get_text() for p in with_cards)
+    assert "Flashcards" in text and "What is #1 [x]?" in text and "An answer with $ and *stars*." in text

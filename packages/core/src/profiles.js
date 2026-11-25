@@ -159,10 +159,13 @@ export function settingsToStyle(settings) {
     '--fra-ls': `${clamp(s.letterSpacing, 0, 0.35, 0)}em`,
     '--fra-ws': `${clamp(s.wordSpacing, 0, 0.5, 0)}em`,
     '--fra-lh': String(clamp(s.lineHeight, 1.2, 2.4, 1.6)),
-    '--fra-measure': `${clamp(s.measure, 40, 100, 70)}ch`,
+    '--fra-measure': `${clamp(s.measure, 40, 100, 66)}ch`,
+    // Characters per line as a plain number; the renderer turns it into a width
+    // that matches real text (see docRenderer.css).
+    '--fra-measure-n': String(clamp(s.measure, 40, 100, 66)),
     '--fra-font': FONT_STACKS[s.font] || FONT_STACKS.system,
     // Wider paragraph gaps when spacing is widened (WCAG 1.4.12 style spacing)
-    '--fra-gap': Number(s.letterSpacing) >= 0.1 || Number(s.lineHeight) >= 1.8 ? '1.8em' : '1.1em',
+    '--fra-gap': Number(s.letterSpacing) >= 0.1 || Number(s.lineHeight) >= 1.8 ? '1.8em' : '1.3em',
   };
 }
 

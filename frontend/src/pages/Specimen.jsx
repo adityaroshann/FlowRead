@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Radio, RadioGroup, Label } from 'react-aria-components';
-import { Check } from 'lucide-react';
 import DocRenderer from '../access/shared/DocRenderer.jsx';
 import { PROFILES, PROFILE_ORDER } from '@flowread/core/profiles.js';
 import { tokenize } from '@flowread/core/docModel.js';
-import { chooseProfile, usePrefs, webSettingsForProfile } from '../access/reader/readerPrefs.js';
+import { usePrefs, webSettingsForProfile } from '../access/reader/readerPrefs.js';
 
 const PARA =
   'A cell that doubles in width gains four times the surface but eight times the volume. Past a certain size, its membrane can no longer bring in food and oxygen fast enough, so the cell divides instead of growing.';
@@ -37,11 +36,11 @@ const SPECIMEN = {
 };
 
 const SHORT = {
-  standard: 'Comfortable defaults',
-  dyslexia: 'Spacing and a calm page',
-  focus: 'One section at a time',
-  screenreader: 'Quiet, clear structure',
-  lowvision: 'Large, high contrast',
+  standard: 'Medium bold word starts, comfortable spacing',
+  dyslexia: 'Light bold starts, wide spacing, a cream page',
+  focus: 'Strong bold starts, a focus line, one section at a time',
+  screenreader: 'No visual extras, clear structure',
+  lowvision: 'Large text, high contrast',
 };
 
 function reducedMotion() {
@@ -85,12 +84,10 @@ export default function Specimen() {
     };
   }, [words]);
 
-  const profile = PROFILES[id];
   const base = webSettingsForProfile(id);
   // Profiles that don't set a theme follow the page's current theme.
   const theme = base.theme === 'light' ? prefs.settings.theme : base.theme;
   const settings = { ...base, theme, plainLanguage: false, readAloud: false };
-  const mine = prefs.chosen && prefs.profileId === id;
 
   return (
     <div className="spec">
@@ -109,24 +106,7 @@ export default function Specimen() {
         <DocRenderer doc={SPECIMEN} profile={settings} showTitle={false} highlight={hl} className="spec-doc" />
       </div>
 
-      <div className="spec-foot">
-        <p className="spec-desc">
-          <strong>{SHORT[id]}.</strong> {profile.description}
-        </p>
-        <button
-          type="button"
-          className="btn btn-sm"
-          onClick={() => chooseProfile(id)}
-        >
-          {mine ? (
-            <>
-              <Check size={14} aria-hidden="true" /> Your reading profile
-            </>
-          ) : (
-            <>Read with {profile.label}</>
-          )}
-        </button>
-      </div>
+      <p className="spec-caption">{SHORT[id]}</p>
     </div>
   );
 }

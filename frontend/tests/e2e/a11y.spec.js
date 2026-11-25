@@ -63,15 +63,19 @@ test.describe('reflow at 320 CSS px (200% zoom on a 640 px window)', () => {
     }
   }
 
-  test('the mobile sheet (contents and settings) passes axe', async ({ page }) => {
+  test('the mobile sheet (contents and summary) and More sheet pass axe', async ({ page }) => {
     await offlineApi(page);
     await usePrefs(page, 'standard');
     await seedSample(page);
-    await page.getByRole('button', { name: 'Contents and settings' }).click();
-    await expect(page.getByRole('dialog', { name: 'Contents and settings' })).toBeVisible();
+    await page.getByRole('button', { name: 'Contents and summary' }).click();
+    await expect(page.getByRole('dialog', { name: 'Contents and summary' })).toBeVisible();
     await expectNoSeriousAxe(page, 'mobile sheet');
-    await page.getByRole('tab', { name: 'Adjust' }).click();
-    await expectNoSeriousAxe(page, 'mobile sheet adjust');
+    await page.getByRole('tab', { name: 'Summary' }).click();
+    await expectNoSeriousAxe(page, 'mobile sheet summary');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'More' }).click();
+    await expect(page.getByRole('dialog', { name: 'More reading settings' })).toBeVisible();
+    await expectNoSeriousAxe(page, 'more sheet');
   });
 });
 

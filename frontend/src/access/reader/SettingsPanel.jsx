@@ -11,7 +11,6 @@ import {
 import { Plug, RotateCcw } from 'lucide-react';
 import { FONTS, THEMES } from '@flowread/core/profiles.js';
 import { THEME_COLORS } from '@flowread/core/readingCss.js';
-import DocRenderer from '../shared/DocRenderer.jsx';
 import { setPrefs, updateSettings, usePrefs, webSettingsForProfile } from './readerPrefs.js';
 import { useExtensionStatus } from '../../app/extensionBridge.js';
 import { PROFILES } from '@flowread/core/profiles.js';
@@ -25,14 +24,6 @@ const FONT_PREVIEW = {
   serif: 'var(--font-body)',
 };
 
-const PREVIEW_TEXT =
-  'The membrane is a thin, flexible layer of fat and protein. It decides what enters the cell and what stays outside.';
-const PREVIEW_DOC = {
-  id: 'preview',
-  title: 'Preview',
-  lang: 'en',
-  sections: [{ id: 'pv', heading: '', level: 2, blocks: [{ id: 'pvb', type: 'paragraph', text: PREVIEW_TEXT }] }],
-};
 
 function SettingSlider({ label, value, onChange, min, max, step, format }) {
   return (
@@ -63,7 +54,7 @@ function Toggle({ label, hint, isSelected, onChange }) {
   );
 }
 
-export default function SettingsPanel() {
+export default function SettingsPanel({ children }) {
   const prefs = usePrefs();
   const s = prefs.settings;
   const ext = useExtensionStatus();
@@ -72,9 +63,7 @@ export default function SettingsPanel() {
 
   return (
     <div className="set">
-      <div className="set-preview" aria-label="Preview of your settings" role="group">
-        <DocRenderer doc={PREVIEW_DOC} profile={{ ...s, plainLanguage: false, readAloud: false }} showTitle={false} className="set-preview-doc" />
-      </div>
+      {children}
 
       <RadioGroup className="set-group" value={s.theme} onChange={set('theme')}>
         <Label className="set-label">Theme</Label>
@@ -114,14 +103,27 @@ export default function SettingsPanel() {
 
       <div className="set-group set-switches">
         <p className="set-label">Reading aids</p>
-        <Toggle label="Bold word starts" hint="Bold the first letters of each word" isSelected={s.boldStarts} onChange={set('boldStarts')} />
         <Toggle label="Focus sessions" hint="One section at a time, with time left" isSelected={s.focusMode} onChange={set('focusMode')} />
-        <Toggle label="Section summaries" hint="A short summary before each section" isSelected={s.summaries} onChange={set('summaries')} />
-        <Toggle label="Focus line" hint="Dim everything but the line you’re on" isSelected={s.focusLine} onChange={set('focusLine')} />
+        <Toggle label="Section summaries" hint="A short AI summary before each section" isSelected={s.summaries} onChange={set('summaries')} />
+        <Toggle label="Reading timer" hint="25 minutes of reading, then a 5-minute break" isSelected={s.readingTimer} onChange={set('readingTimer')} />
         <Toggle label="Read aloud" hint="Word-by-word highlighting as it reads" isSelected={s.readAloud} onChange={set('readAloud')} />
         <Toggle label="Plain language" hint="Simpler rewrites, next to the original" isSelected={s.plainLanguage} onChange={set('plainLanguage')} />
         <Toggle label="Image descriptions" hint="Show descriptions under pictures" isSelected={s.imageDetails} onChange={set('imageDetails')} />
         <Toggle label="Spoken maths" hint="Show how each expression is read" isSelected={s.mathSpoken} onChange={set('mathSpoken')} />
+      </div>
+
+      <div className="set-group set-switches">
+        <p className="set-label">Focus line</p>
+        <Toggle label="Focus line" hint="A reading band that follows your pointer (F)" isSelected={s.focusLine} onChange={set('focusLine')} />
+        <RadioGroup className="set-inline" value={String(s.focusLineSize || 2)} onChange={(v) => updateSettings({ focusLineSize: Number(v) })} orientation="horizontal">
+          <Label className="set-sublabel">Band height</Label>
+          {['1', '2', '3'].map((v) => (
+            <Radio key={v} value={v} className="set-chip">
+              {v} {v === '1' ? 'line' : 'lines'}
+            </Radio>
+          ))}
+        </RadioGroup>
+        <Toggle label="Dim the rest of the page" isSelected={s.focusDim} onChange={set('focusDim')} />
       </div>
 
       <div className="set-group set-switches">

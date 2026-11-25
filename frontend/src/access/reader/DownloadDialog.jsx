@@ -102,6 +102,7 @@ export default function DownloadDialog({ isOpen, onOpenChange, doc, settings, on
     includeSummaries: true,
     includePlain: false,
     includePageRefs: true,
+    includeFlashcards: true,
   });
   const [status, setStatus] = useState({ phase: 'idle' });
   const abortRef = useRef(null);
@@ -246,6 +247,9 @@ export default function DownloadDialog({ isOpen, onOpenChange, doc, settings, on
                         onChange={opt('includePlain')}
                       />
                       <Toggle label="Original page numbers" isSelected={options.includePageRefs} onChange={opt('includePageRefs')} />
+                      {format === 'pdf' && doc.flashcards?.cards?.length > 0 && (
+                        <Toggle label={`Flashcards page (${doc.flashcards.cards.length} cards)`} isSelected={options.includeFlashcards} onChange={opt('includeFlashcards')} />
+                      )}
                     </div>
                   )}
                 </div>

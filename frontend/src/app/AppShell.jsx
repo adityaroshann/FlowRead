@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { BookMarked, Building2 } from 'lucide-react';
+import { BookMarked } from 'lucide-react';
 import Brand from './Brand.jsx';
 
 /**
@@ -19,10 +19,6 @@ export default function AppShell({ children, mainClass = '' }) {
             <NavLink to="/library">
               <BookMarked size={16} aria-hidden="true" />
               Library
-            </NavLink>
-            <NavLink to="/workspace">
-              <Building2 size={16} aria-hidden="true" />
-              For institutions
             </NavLink>
           </nav>
         </div>

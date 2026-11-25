@@ -27,14 +27,18 @@ import {
   Focus,
   ListChecks,
   Minus,
+  Layers,
+  Undo2,
+  WandSparkles,
 } from 'lucide-react';
 import DocRenderer from '../shared/DocRenderer.jsx';
 import { getDoc, getSource, saveDoc } from '../shared/storage.js';
 import { SAMPLE_DOC_ID, seedSampleDoc } from '../shared/sampleDoc.js';
-import { plainLanguage, summarizeSection } from '../shared/api.js';
-import { PROFILES, PROFILE_ORDER, THEMES, getProfile, settingsToData, settingsToStyle } from '@flowread/core/profiles.js';
+import { plainLanguage, suggestHeadings, summarizeSection } from '../shared/api.js';
+import AiBadge from '../shared/AiBadge.jsx';
+import { PROFILES, PROFILE_ORDER, THEMES, settingsToData, settingsToStyle } from '@flowread/core/profiles.js';
 import { readingMinutes, sectionLabel, sectionText, sectionWordCount } from '@flowread/core/docModel.js';
-import { chooseProfile, loadProgress, saveProgress, setPrefs, updateSettings, usePrefs } from './readerPrefs.js';
+import { chooseProfile, getPrefs, loadProgress, saveProgress, updateSettings, usePrefs } from './readerPrefs.js';
 import { useWordSpeech } from './useWordSpeech.js';
 import { BrandMark } from '../../app/Brand.jsx';
 import Toast from '../../app/Toast.jsx';
@@ -43,6 +47,9 @@ import SideRail from './SideRail.jsx';
 import CommandPalette from './CommandPalette.jsx';
 import SelectionPopover from './SelectionPopover.jsx';
 import DownloadDialog from './DownloadDialog.jsx';
+import ReadingBar from './ReadingBar.jsx';
+import SettingsPanel from './SettingsPanel.jsx';
+import Flashcards from './Flashcards.jsx';
 import { THEME_NAMES } from './labels.js';
 import './reader.css';
 
@@ -82,6 +89,38 @@ function updateBlock(doc, blockId, patch) {
       s.blocks.some((b) => b.id === blockId) ? { ...s, blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, ...patch } : b)) } : s,
     ),
   };
+}
+
+/** Insert AI-suggested headings (new blocks only; existing text is untouched). */
+function withAiHeadings(doc, headings) {
+  const before = new Map(headings.map((h) => [h.beforeBlockId, h.text]));
+  let n = 0;
+  return {
+    ...doc,
+    aiHeadings: true,
+    sections: doc.sections.map((s) => ({
+      ...s,
+      blocks: s.blocks.flatMap((b) =>
+        before.has(b.id)
+          ? [{ id: `aih${(n += 1)}`, type: 'heading', level: Math.min(6, (Number(s.level) || 2) + 1), text: before.get(b.id), ai: true, plain: null }, b]
+          : [b],
+      ),
+    })),
+  };
+}
+
+function withoutAiHeadings(doc) {
+  const { aiHeadings, ...rest } = doc; // eslint-disable-line no-unused-vars
+  return { ...rest, sections: doc.sections.map((s) => ({ ...s, blocks: s.blocks.filter((b) => !b.ai) })) };
+}
+
+function aiDidText(ai) {
+  if (!ai) return '';
+  const parts = [];
+  if (ai.imagesDescribed) parts.push(`described ${ai.imagesDescribed} ${ai.imagesDescribed === 1 ? 'image' : 'images'}`);
+  if (ai.pagesRead) parts.push(`read ${ai.pagesRead} scanned ${ai.pagesRead === 1 ? 'page' : 'pages'}`);
+  if (ai.mathSpoken) parts.push(`made ${ai.mathSpoken} ${ai.mathSpoken === 1 ? 'formula' : 'formulas'} speakable`);
+  return parts.length ? `AI ${parts.join(', ')}.` : '';
 }
 
 function updateSection(doc, sectionId, patch) {
@@ -136,8 +175,9 @@ function SummaryBox({ section, state, onFetch, index }) {
       <p className="rd-summary-label">In this section</p>
       {text ? (
         <>
-          <p className="rd-summary-text">{text}</p>
-          {!section.summary && <p className="rd-summary-note">Summary written by AI. The full text below is the source.</p>}
+          <p className="rd-summary-text">
+            {text} <AiBadge what="This summary" />
+          </p>
         </>
       ) : state?.status === 'loading' ? (
         <p className="rd-summary-text rd-muted">Writing a short summary…</p>
@@ -196,41 +236,11 @@ function NotFound({ docId }) {
   );
 }
 
-function FirstVisit({ onDismiss }) {
-  return (
-    <div className="rd-first" role="region" aria-label="Choose a reading profile">
-      <RadioGroup
-        className="rd-first-group"
-        orientation="horizontal"
-        onChange={(id) => {
-          chooseProfile(id);
-          onDismiss();
-        }}
-      >
-        <Label className="rd-first-label">How would you like to read? You can change this any time.</Label>
-        <div className="seg">
-          {PROFILE_ORDER.map((id) => (
-            <Radio key={id} value={id} className="seg-item">
-              {PROFILES[id].label}
-            </Radio>
-          ))}
-        </div>
-      </RadioGroup>
-      <button type="button" className="btn btn-sm btn-quiet" onClick={onDismiss}>
-        Not now
-      </button>
-    </div>
-  );
-}
-
-// ---------- the reader ----------
-
 function ReaderView({ initialDoc }) {
   const navigate = useNavigate();
   const [doc, setDoc] = useState(initialDoc);
   const prefs = usePrefs();
   const settings = prefs.settings;
-  const profile = getProfile(prefs.profileId);
   const wide = useMedia('(min-width: 64em)');
   const osReduced = useMedia('(prefers-reduced-motion: reduce)');
   const noMotion = settings.noMotion || osReduced || prefs.reduceMotion;
@@ -249,12 +259,15 @@ function ReaderView({ initialDoc }) {
   const [paletteSel, setPaletteSel] = useState(false);
   const [paletteKey, setPaletteKey] = useState(0);
   const [download, setDownload] = useState({ open: false, format: 'pdf' });
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [cardsOpen, setCardsOpen] = useState(false);
+  const [docSummary, setDocSummary] = useState({ status: 'idle' });
+  const [headingsState, setHeadingsState] = useState({ status: 'idle' });
   const [source, setSource] = useState(null);
   const [originalOpen, setOriginalOpen] = useState(false);
   const [summaries, setSummaries] = useState({});
   const [announcement, setAnnouncement] = useState('');
   const [toast, setToast] = useState(null);
-  const [firstVisit, setFirstVisit] = useState(!prefs.chosen);
   const [sectionIndex, setSectionIndex] = useState(() => (saved && saved.section < n ? saved.section : 0));
   const [visibleIndex, setVisibleIndex] = useState(0);
   const [furthest, setFurthest] = useState(() => (saved ? Math.min(n, saved.section) : 0));
@@ -441,6 +454,63 @@ function ReaderView({ initialDoc }) {
     [persist],
   );
 
+  const fetchDocSummary = useCallback(async () => {
+    setDocSummary({ status: 'loading' });
+    try {
+      const text = sections.map((s) => `${s.heading || ''}\n${sectionText(s)}`).join('\n\n').slice(0, 55000);
+      const summary = await summarizeSection(doc.title || '', text);
+      setDocSummary({ status: 'done' });
+      setDoc((d) => {
+        const next = { ...d, summary };
+        persist(next);
+        return next;
+      });
+    } catch {
+      setDocSummary({ status: 'error' });
+    }
+  }, [sections, doc.title, persist]);
+
+  const addHeadings = useCallback(async () => {
+    setHeadingsState({ status: 'loading' });
+    try {
+      const paragraphs = [];
+      for (const s of sections) for (const b of s.blocks || []) if (b.type === 'paragraph' && !b.role) paragraphs.push({ id: b.id, text: b.text });
+      const headings = await suggestHeadings(paragraphs);
+      if (!headings.length) {
+        setHeadingsState({ status: 'none' });
+        return;
+      }
+      setDoc((d) => {
+        const next = withAiHeadings(d, headings);
+        persist(next);
+        return next;
+      });
+      setHeadingsState({ status: 'idle' });
+      setAnnouncement(`Added ${headings.length} headings suggested by AI.`);
+    } catch (e) {
+      setHeadingsState({ status: 'error', message: e?.status === 503 ? 'This needs the AI service.' : 'Headings could not be added right now.' });
+    }
+  }, [sections, persist]);
+
+  const undoHeadings = useCallback(() => {
+    setDoc((d) => {
+      const next = withoutAiHeadings(d);
+      persist(next);
+      return next;
+    });
+    setAnnouncement('Removed the AI headings.');
+  }, [persist]);
+
+  const saveCards = useCallback(
+    (flashcards) =>
+      setDoc((d) => {
+        const next = { ...d, flashcards };
+        persist(next);
+        return next;
+      }),
+    [persist],
+  );
+
   // ---- read aloud ----
   const readFrom = useCallback(
     (blockId) => {
@@ -478,6 +548,14 @@ function ReaderView({ initialDoc }) {
       } else if (mod && e.shiftKey && e.key.toLowerCase() === 'e') {
         e.preventDefault();
         if (!selRef.current?.open()) setAnnouncement('Select some text in the document first.');
+      } else if (!mod && !e.altKey && (e.key === 'f' || e.key === 'F')) {
+        const t = e.target;
+        const typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.closest?.('[role="dialog"]'));
+        if (typing) return;
+        e.preventDefault();
+        const on = !getPrefs().settings.focusLine;
+        updateSettings({ focusLine: on });
+        setAnnouncement(`Focus line ${on ? 'on' : 'off'}.`);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -498,11 +576,6 @@ function ReaderView({ initialDoc }) {
     else if (kind === 'read') speakText(text);
     else if (kind === 'copy') navigator.clipboard?.writeText(text).catch(() => {});
   };
-  const openPalette = useCallback(() => {
-    setPaletteSel(!!selRef.current?.hasSelection());
-    setPaletteKey((k) => k + 1);
-    setPaletteOpen(true);
-  }, []);
 
   // ---- command palette ----
   const hasSelection = paletteOpen && paletteSel;
@@ -559,7 +632,9 @@ function ReaderView({ initialDoc }) {
         { id: 'dl-html', label: 'Download accessible HTML', icon: Download, keywords: 'export save', run: () => setDownload({ open: true, format: 'html' }) },
         { id: 'dl-docx', label: 'Download Word file', icon: Download, keywords: 'export save docx', run: () => setDownload({ open: true, format: 'docx' }) },
         ...(source ? [{ id: 'orig', label: originalOpen ? 'Hide the original' : 'Show the original side by side', icon: Columns2, run: () => setOriginalOpen((o) => !o) }] : []),
-        { id: 'adjust', label: 'Adjust reading settings', icon: Type, run: () => openRail('adjust') },
+        { id: 'adjust', label: 'More reading settings', icon: Type, run: () => setMoreOpen(true) },
+        { id: 'cards', label: 'Flashcards: check what you remember', icon: Layers, keywords: 'quiz study review', run: () => setCardsOpen(true) },
+        { id: 'summary', label: 'Show summaries', icon: Sparkles, run: () => openRail('summary') },
         { id: 'edit', label: 'Fix the structure', icon: FilePenLine, run: () => navigate(`/read/${encodeURIComponent(doc.id)}/edit`) },
         { id: 'library', label: 'Go to library', icon: BookMarked, run: () => navigate('/library') },
         ...(wide ? [{ id: 'rail', label: railOpen ? 'Hide the side panel' : 'Show the side panel', icon: PanelLeft, run: () => setRailOpen((o) => !o) }] : []),
@@ -651,11 +726,7 @@ function ReaderView({ initialDoc }) {
           </>
         ) : null}
       </p>
-      {firstVisit && <FirstVisit onDismiss={() => {
-        setFirstVisit(false);
-        setPrefs((p) => ({ ...p, chosen: true }));
-      }} />}
-      {resume != null && !firstVisit && (
+      {resume != null && (
         <div className="rd-resume" role="region" aria-label="Resume reading">
           <p>
             {focusMode ? 'Picked up where you left off: ' : 'You were reading '}
@@ -677,6 +748,32 @@ function ReaderView({ initialDoc }) {
           </div>
         </div>
       )}
+      {(aiDidText(doc.ai) || doc.structureHint || doc.aiHeadings) && !minimal && (
+        <div className="rd-ai-note">
+          {aiDidText(doc.ai) && (
+            <p className="rd-ai-did">
+              <Sparkles size={14} aria-hidden="true" /> While converting, {aiDidText(doc.ai)}
+            </p>
+          )}
+          {doc.aiHeadings ? (
+            <p className="rd-ai-did">
+              <WandSparkles size={14} aria-hidden="true" /> AI added headings to break up long stretches of text.{' '}
+              <button type="button" className="linklike" onClick={undoHeadings}>
+                <Undo2 size={13} aria-hidden="true" /> Remove them
+              </button>
+            </p>
+          ) : doc.structureHint === 'few-headings' ? (
+            <p className="rd-ai-did">
+              This document has long stretches without headings.{' '}
+              <button type="button" className="linklike" onClick={addHeadings} disabled={headingsState.status === 'loading'}>
+                <WandSparkles size={13} aria-hidden="true" /> {headingsState.status === 'loading' ? 'Adding headings…' : 'Add headings with AI'}
+              </button>
+              {headingsState.status === 'error' && <span className="rd-error"> {headingsState.message}</span>}
+              {headingsState.status === 'none' && <span className="rd-muted"> No good places for headings were found.</span>}
+            </p>
+          ) : null}
+        </div>
+      )}
       {focusBar}
     </div>
   );
@@ -693,6 +790,16 @@ function ReaderView({ initialDoc }) {
     pages,
     onGoPage: goToPage,
     kind: doc.source?.kind,
+    summary: {
+      doc,
+      section: sections[current],
+      sectionIndex: current,
+      sectionSummary: sections[current] ? summaries[sections[current].id] : undefined,
+      onSectionSummary: fetchSummary,
+      docSummary,
+      onDocSummary: fetchDocSummary,
+      onFlashcards: () => setCardsOpen(true),
+    },
   };
 
   const origPage = pageForSection(sections, current);
@@ -713,7 +820,7 @@ function ReaderView({ initialDoc }) {
           type="button"
           className="btn btn-icon btn-quiet rd-railbtn"
           onClick={() => (wide ? setRailOpen((o) => !o) : setSheetOpen(true))}
-          aria-label={wide ? (railOpen ? 'Hide contents and settings' : 'Show contents and settings') : 'Contents and settings'}
+          aria-label={wide ? (railOpen ? 'Hide contents and summary' : 'Show contents and summary') : 'Contents and summary'}
           aria-expanded={wide ? railOpen : undefined}
           aria-controls={wide ? 'rd-rail' : undefined}
         >
@@ -727,71 +834,23 @@ function ReaderView({ initialDoc }) {
           {doc.title}
         </span>
 
-        <div className="rd-actions">
-          {showSpeech && (
-            <div className="rd-speech" role="group" aria-label="Read aloud">
-              <button type="button" className="btn btn-sm" onClick={readCurrent} aria-pressed={speech.status === 'speaking'}>
-                {speech.status === 'speaking' ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
-                <span className="rd-hide-sm">
-                  {speech.status === 'speaking' ? 'Pause' : speech.status === 'paused' ? 'Resume' : 'Read aloud'}
-                </span>
-                <span className="sr-only rd-show-sm">
-                  {speech.status === 'speaking' ? 'Pause' : speech.status === 'paused' ? 'Resume' : 'Read aloud'}
-                </span>
-              </button>
-              {speech.status !== 'idle' && (
-                <button type="button" className="btn btn-sm btn-icon" onClick={speech.stop} aria-label="Stop reading">
-                  <Square size={14} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          )}
-          {source && (
-            <button
-              type="button"
-              className="btn btn-sm rd-hide-sm"
-              aria-pressed={originalOpen}
-              onClick={() => setOriginalOpen((o) => !o)}
-            >
-              <Columns2 size={16} aria-hidden="true" /> Original
-            </button>
-          )}
-          <button type="button" className="btn btn-sm" onClick={() => setDownload({ open: true, format: 'pdf' })} aria-haspopup="dialog">
-            <Download size={16} aria-hidden="true" />
-            <span className="rd-hide-sm">Download</span>
-            <span className="sr-only rd-show-sm">Download</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm btn-quiet rd-cmd"
-            onClick={openPalette}
-            aria-haspopup="dialog"
-            aria-keyshortcuts="Control+K Meta+K"
-          >
-            <Command size={16} aria-hidden="true" />
-            <span className="rd-hide-sm">Commands</span>
-            <span className="sr-only rd-show-sm">Commands</span>
-            {!minimal && (
-              <span className="kbd rd-hide-sm" aria-hidden="true">
-                Ctrl K
-              </span>
-            )}
-          </button>
+        <div className="rd-barrow">
+          <ReadingBar
+            prefs={prefs}
+            speech={speech}
+            showSpeech={showSpeech}
+            onReadAloud={readCurrent}
+            onMore={() => setMoreOpen(true)}
+            onDownload={() => setDownload({ open: true, format: 'pdf' })}
+            onAnnounce={setAnnouncement}
+          />
         </div>
       </header>
 
       <div className="rd-body">
         {wide && railOpen && (
-          <aside className="rd-rail" id="rd-rail" aria-label="Contents and settings">
+          <aside className="rd-rail" id="rd-rail" aria-label="Contents and summary">
             <SideRail {...railProps} />
-            <div className="rd-rail-foot">
-              <Link to={`/read/${encodeURIComponent(doc.id)}/edit`} className="btn btn-sm btn-quiet">
-                <FilePenLine size={14} aria-hidden="true" /> Fix structure
-              </Link>
-              <span className="rd-rail-profile">
-                <UserRound size={14} aria-hidden="true" /> {profile.label}
-              </span>
-            </div>
           </aside>
         )}
 
@@ -841,6 +900,21 @@ function ReaderView({ initialDoc }) {
               </button>
             </p>
           )}
+          {(atEnd || (focusMode && current === n - 1)) && (
+            <section className="rd-recall" aria-labelledby="rd-recall-h">
+              <h2 id="rd-recall-h" className="rd-recall-h">
+                <Layers size={18} aria-hidden="true" /> Check what you remember
+              </h2>
+              <p className="rd-recall-text">
+                {doc.flashcards?.cards?.length
+                  ? `You have ${doc.flashcards.cards.length} flashcards from this document. Practise them, or take a quick quiz.`
+                  : 'Turn the key points into flashcards and a short quiz.'}
+              </p>
+              <button type="button" className="btn btn-primary" onClick={() => setCardsOpen(true)}>
+                {doc.flashcards?.cards?.length ? 'Practise flashcards' : 'Make flashcards'} <AiBadge what="Flashcards" />
+              </button>
+            </section>
+          )}
         </main>
 
         {showOriginal && (
@@ -859,7 +933,7 @@ function ReaderView({ initialDoc }) {
       {!wide && (
         <ModalOverlay className="modal-overlay rd-sheet-overlay" isOpen={sheetOpen} onOpenChange={setSheetOpen} isDismissable>
           <Modal className="rd-sheet">
-            <Dialog className="rd-sheet-dialog" aria-label="Contents and settings">
+            <Dialog className="rd-sheet-dialog" aria-label="Contents and summary">
               {({ close }) => (
                 <>
                   <div className="rd-sheet-head">
@@ -887,13 +961,59 @@ function ReaderView({ initialDoc }) {
         settings={settings}
         onDone={(message) => setToast({ id: Date.now(), message, duration: 4000 })}
       />
+      <ModalOverlay className="modal-overlay more-overlay" isOpen={moreOpen} onOpenChange={setMoreOpen} isDismissable>
+        <Modal className="more-sheet">
+          <Dialog className="more-dialog" aria-label="More reading settings">
+            {({ close }) => (
+              <>
+                <div className="rd-sheet-head">
+                  <Heading slot="title" className="rd-sheet-title">
+                    More settings
+                  </Heading>
+                  <button type="button" className="btn btn-icon btn-quiet" onClick={close} aria-label="Close">
+                    <X size={18} aria-hidden="true" />
+                  </button>
+                </div>
+                <SettingsPanel>
+                  <div className="set-group more-doc">
+                    <p className="set-label">This document</p>
+                    <div className="more-actions">
+                      {source && (
+                        <button type="button" className="btn btn-sm" aria-pressed={originalOpen} onClick={() => setOriginalOpen((o) => !o)}>
+                          <Columns2 size={15} aria-hidden="true" /> {originalOpen ? 'Hide the original' : 'Show the original beside it'}
+                        </button>
+                      )}
+                      <Link to={`/read/${encodeURIComponent(doc.id)}/edit`} className="btn btn-sm">
+                        <FilePenLine size={15} aria-hidden="true" /> Fix structure
+                      </Link>
+                    </div>
+                    <p className="hint">
+                      Shortcuts: <kbd className="kbd">F</kbd> focus line · <kbd className="kbd">Ctrl K</kbd> all commands ·{' '}
+                      <kbd className="kbd">Ctrl Shift E</kbd> explain selected text
+                    </p>
+                  </div>
+                </SettingsPanel>
+              </>
+            )}
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
+      <Flashcards isOpen={cardsOpen} onOpenChange={setCardsOpen} doc={doc} onSaveCards={saveCards} />
       <SelectionPopover ref={selRef} rootRef={mainRef} onSpeak={speakText} />
 
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {announcement}
       </div>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
-      <FocusLine active={settings.focusLine} bandPx={Math.round(88 * (settings.textScale || 1) * (settings.lineHeight / 1.6))} />
+      <FocusLine
+        active={settings.focusLine}
+        lineHeightPx={Math.round(18 * (settings.textScale || 1) * (settings.lineHeight || 1.6))}
+        lines={settings.focusLineSize}
+        dim={settings.focusDim}
+        noMotion={noMotion}
+        followSelector={speech.highlight ? '.rd-doc .fra-word-current' : undefined}
+        followKey={speech.highlight ? `${speech.highlight.blockId}:${speech.highlight.start}` : undefined}
+      />
     </div>
   );
 }

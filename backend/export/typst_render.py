@@ -75,7 +75,7 @@ DEFAULT_SETTINGS = {
     "lineHeight": 1.6, "measure": 66, "boldStarts": True, "boldIntensity": 0.45,
 }
 DEFAULT_OPTIONS = {"pageSize": "A4", "includeSummaries": False, "includePlain": False,
-                   "includePageRefs": True, "includeToc": False}
+                   "includePageRefs": True, "includeToc": False, "includeFlashcards": False}
 PAPER = {"A4": ("a4", 595.28, 841.89), "Letter": ("us-letter", 612.0, 792.0)}
 MM = 72 / 25.4
 BASE_SIZE = 11.0
@@ -151,6 +151,7 @@ def resolve_style(settings: dict | None, options: dict | None) -> dict:
             "includePlain": o.get("includePlain") is True,
             "includePageRefs": o.get("includePageRefs") is not False,
             "includeToc": o.get("includeToc") is True,
+            "includeFlashcards": o.get("includeFlashcards") is True,
         },
     }
 
@@ -393,6 +394,16 @@ def build_model(doc: dict, style: dict, workdir: str) -> dict:
             if opts["includePlain"] and t in ("paragraph", "list", "table") and clean(b.get("plain")):
                 items.append({"k": "plain", "t": clean(b.get("plain"))})
 
+    # Flashcards page at the end: question, then the answer underneath.
+    cards = (doc.get("flashcards") or {}).get("cards") if isinstance(doc.get("flashcards"), dict) else None
+    if opts["includeFlashcards"] and isinstance(cards, list):
+        pairs = []
+        for c in cards[:60]:
+            if isinstance(c, dict) and clean(c.get("front")) and clean(c.get("back")):
+                pairs.append({"q": clean(c.get("front"))[:400], "a": clean(c.get("back"))[:800]})
+        if pairs:
+            items.append({"k": "cards", "cards": pairs})
+
     return {
         "title": title,
         "lang": lang,
@@ -454,6 +465,15 @@ TEMPLATE = r"""
     heading(level: 1, outlined: false, bookmarked: true, b.t)
   } else if b.k == "toc" {
     outline(title: [Contents], depth: 3)
+  } else if b.k == "cards" {
+    pagebreak(weak: true)
+    heading(level: 2, [Flashcards])
+    par(text(size: 0.85em, fill: rgb(S.muted), [Made by AI from this document. Cover the answer, then check.]))
+    for (i, c) in b.cards.enumerate() {
+      block(width: 100%, breakable: false, inset: (y: 0.55em), stroke: (bottom: 0.5pt + rgb(S.muted)))[
+        #strong([#(i + 1). #c.q]) #linebreak() #text(fill: rgb(S.muted), c.a)
+      ]
+    }
   } else if b.k == "h" {
     heading(level: b.level, runs(b.runs))
   } else if b.k == "p" {

@@ -2,7 +2,8 @@
    reading theme because <html data-ui-theme> mirrors settings.theme. */
 
 .rd {
-  --top-h: 56px;
+  /* Two rows: title row (56px) + reading bar (52px) */
+  --top-h: 108px;
   min-height: 100vh;
   background: var(--fra-bg);
   color: var(--fra-text);
@@ -24,6 +25,8 @@
   z-index: 40;
   height: var(--top-h);
   display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
   align-items: center;
   gap: var(--s-2);
   padding: 0 var(--s-3);
@@ -1092,6 +1095,27 @@
   right: 0;
   border-top: 1.5px solid var(--fra-accent);
   border-bottom: 1.5px solid var(--fra-accent);
+  background: color-mix(in srgb, var(--fra-accent) 8%, transparent);
+  mix-blend-mode: multiply;
+  transition: top 90ms ease-out, height 120ms ease-out;
+}
+[data-fra-theme='dark'] .fra-focusline-band,
+[data-fra-theme='high-contrast'] .fra-focusline-band {
+  mix-blend-mode: normal;
+  background: color-mix(in srgb, var(--fra-accent) 14%, transparent);
+}
+.fra-focusline-dim {
+  transition: top 90ms ease-out, height 90ms ease-out;
+}
+.fra-focusline.no-motion .fra-focusline-band,
+.fra-focusline.no-motion .fra-focusline-dim {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fra-focusline-band,
+  .fra-focusline-dim {
+    transition: none;
+  }
 }
 
 @media print {
@@ -1103,5 +1127,466 @@
   .fra-block-tools,
   .fra-focusline {
     display: none !important;
+  }
+}
+
+
+/* ---------- Reading bar: the essentials, always in view ---------- */
+
+.rd-top > :not(.rd-barrow) {
+  height: 56px;
+}
+.rd-top-title {
+  line-height: 56px;
+}
+.rd-barrow {
+  flex: 1 0 100%;
+  /* Let the bar scroll inside its row instead of widening the page, and keep
+     visually hidden labels (position: absolute) inside that scroller. */
+  position: relative;
+  min-width: 0;
+  max-width: calc(100% + 2 * var(--s-3));
+  height: 52px;
+  margin: 0 calc(-1 * var(--s-3));
+  padding: 0 var(--s-3);
+  border-top: 1px solid var(--rule);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+.rbar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: max-content;
+}
+.rbar .btn {
+  min-height: 38px;
+}
+.rbar-spacer {
+  flex: 1;
+  min-width: var(--s-2);
+}
+.rbar-group {
+  display: inline-flex;
+  gap: var(--s-1);
+}
+.rbar-select {
+  min-height: 38px;
+  padding: 0 var(--s-6) 0 var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background-color: var(--raised);
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  appearance: none;
+  color: var(--ink);
+  font: 700 var(--t-sm) var(--font-ui);
+  cursor: pointer;
+}
+.rbar-toggle.is-on {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+/* Segmented Off / Light / Medium / Strong (native radios underneath) */
+.rbar-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--raised);
+}
+.rbar-seg-label {
+  padding: 0 var(--s-2) 0 var(--s-1);
+  font-size: var(--t-xs);
+  color: var(--muted);
+  font-weight: 400;
+}
+.rbar-seg-label b {
+  color: var(--ink);
+}
+.rbar-seg-opt {
+  position: relative;
+}
+.rbar-seg-opt input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.rbar-seg-opt span {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--ink);
+}
+.rbar-seg-opt:hover span {
+  background: var(--surface);
+}
+.rbar-seg-opt input:checked + span {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.rbar-seg-opt input:focus-visible + span {
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: 2px;
+}
+@media (max-width: 47.99em) {
+  .rbar-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Reading timer chip */
+.rtimer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 0 var(--s-1) 0 var(--s-3);
+  min-height: 38px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: var(--t-sm);
+}
+.rtimer.is-break {
+  background: var(--accent-tint);
+}
+.rtimer .btn {
+  min-height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+/* ---------- More sheet (right side) ---------- */
+
+.more-overlay {
+  padding: 0;
+  justify-content: flex-end;
+  align-items: stretch;
+}
+.more-sheet {
+  width: min(26rem, 94vw);
+  height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  border-left: 1px solid var(--rule);
+  box-shadow: var(--sh-3);
+  overflow-y: auto;
+  outline: none;
+}
+.more-sheet[data-entering] {
+  animation: more-in var(--dur-2) var(--ease);
+}
+@keyframes more-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .more-sheet[data-entering] {
+    animation: none;
+  }
+}
+.more-dialog {
+  outline: none;
+  padding: var(--s-4) var(--s-5) var(--s-6);
+}
+.more-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.set-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+.set-sublabel {
+  font-size: var(--t-sm);
+  margin-right: var(--s-2);
+}
+.set-chip {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+.set-chip[data-selected] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.set-chip[data-focus-visible] {
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Summary panel ---------- */
+
+.rail-summary {
+  display: grid;
+  gap: var(--s-5);
+}
+.rail-summary section {
+  display: grid;
+  gap: var(--s-2);
+  justify-items: start;
+}
+.rail-h {
+  margin: 0;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.rail-sum-text {
+  margin: 0;
+  font-size: var(--t-sm);
+  line-height: 1.6;
+}
+.rail-sum-err {
+  margin: 0;
+  font-size: var(--t-xs);
+  color: var(--danger);
+}
+.rail-ai-did,
+.rd-ai-did {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-xs);
+  color: var(--muted);
+}
+.rd-ai-note {
+  display: grid;
+  gap: var(--s-1);
+}
+.rd-ai-did .linklike {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---------- End of document: recall ---------- */
+
+.rd-recall {
+  max-width: 40rem;
+  margin: var(--s-6) auto var(--s-8);
+  padding: var(--s-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+  background: var(--raised);
+  display: grid;
+  gap: var(--s-3);
+  justify-items: start;
+  font-family: var(--font-ui);
+}
+.rd-recall-h {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+}
+.rd-recall-text {
+  margin: 0;
+  color: var(--muted);
+}
+.rd-recall .ai-badge,
+.btn-primary .ai-badge {
+  color: inherit;
+}
+
+/* ---------- Flashcards ---------- */
+
+.fc {
+  display: grid;
+  gap: var(--s-4);
+}
+.fc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+.fc-tabs .btn.is-on {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+}
+.fc-spacer {
+  flex: 1;
+}
+.fc-empty {
+  display: grid;
+  gap: var(--s-4);
+  justify-items: start;
+  padding: var(--s-4) 0;
+}
+.fc-empty p {
+  margin: 0;
+  max-width: 52ch;
+}
+.fc-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--t-sm);
+}
+.fc-progress {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fc-practice,
+.fc-quiz {
+  display: grid;
+  gap: var(--s-4);
+}
+.fc-card {
+  min-height: 15rem;
+  padding: var(--s-6) var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: var(--raised);
+  box-shadow: var(--sh-1);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--s-3);
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.fc-card.is-flipped {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+}
+.fc-card:focus-visible {
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: 3px;
+}
+.fc-side-label {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.fc-text {
+  font-size: var(--t-lg);
+  line-height: 1.45;
+  font-weight: 700;
+  max-width: 34ch;
+}
+.fc-src,
+.fc-hint {
+  font-size: var(--t-xs);
+  color: var(--muted);
+}
+.fc-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+.fc-answer {
+  justify-content: center;
+}
+.fc-answer .kbd {
+  margin-left: 4px;
+}
+.fc-done {
+  display: grid;
+  gap: var(--s-3);
+  justify-items: start;
+  padding: var(--s-4) 0;
+}
+.fc-done p {
+  margin: 0;
+}
+.fc-done-title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+}
+.fc-q {
+  margin: 0;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  line-height: 1.4;
+  outline: none;
+}
+.fc-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+.fc-option {
+  width: 100%;
+  text-align: left;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-base);
+  line-height: 1.45;
+  cursor: pointer;
+}
+.fc-option:hover:not(:disabled) {
+  background: var(--surface);
+}
+.fc-option:disabled {
+  cursor: default;
+}
+.fc-option.is-right {
+  border-color: var(--ok);
+  box-shadow: inset 4px 0 0 var(--ok);
+  font-weight: 700;
+}
+.fc-option.is-wrong {
+  border-color: var(--danger);
+  box-shadow: inset 4px 0 0 var(--danger);
+}
+.fc-verdict {
+  margin: 0;
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fc-card {
+    transition: none;
   }
 }

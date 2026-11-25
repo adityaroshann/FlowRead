@@ -81,7 +81,10 @@
   line-height: var(--fra-lh, 1.6);
   letter-spacing: var(--fra-ls, 0);
   word-spacing: var(--fra-ws, 0);
-  max-width: var(--fra-measure, 66ch);
+  /* Measure in real characters: 'ch' is the width of a zero, which in
+     Atkinson/Lexend is much wider than an average letter, so 66ch gave ~95
+     characters a line. About 0.5em per character, plus any letter spacing. */
+  max-width: calc(var(--fra-measure-n, 66) * (0.5em + var(--fra-ls, 0em)));
   overflow-wrap: break-word;
   min-width: 0;
   font-optical-sizing: auto;
@@ -107,7 +110,7 @@
 
 .fra-h {
   line-height: 1.25;
-  margin: 1.9em 0 0.55em;
+  margin: 2.1em 0 0.6em;
   font-weight: 700;
   overflow-wrap: anywhere;
   scroll-margin-top: calc(var(--header-h, 60px) + 16px);
@@ -137,7 +140,7 @@ h6.fra-h {
 }
 
 .fra-block {
-  margin: 0 0 var(--fra-gap, 1.1em);
+  margin: 0 0 var(--fra-gap, 1.3em);
 }
 .fra-p {
   margin: 0;
@@ -149,7 +152,7 @@ h6.fra-h {
   padding-left: 1.5em;
 }
 .fra-list li {
-  margin: 0 0 0.45em;
+  margin: 0 0 0.65em;
   padding-left: 0.25em;
 }
 .fra-list li::marker {
@@ -329,13 +332,11 @@ li.fra-speaking::before {
   color: var(--fra-muted);
 }
 
-/* Page markers: quiet but findable */
+/* Page markers: a small quiet label, not a divider */
 .fra-page {
-  margin: 1.8em 0;
-  display: flex;
-  align-items: center;
-  gap: 0.75em;
-  font-size: 0.78em;
+  margin: 1.4em 0 0.5em;
+  display: block;
+  font-size: 0.72em;
   font-weight: 700;
   color: var(--fra-muted);
   font-family: var(--font-ui, system-ui, sans-serif);
@@ -343,14 +344,7 @@ li.fra-speaking::before {
   word-spacing: normal;
   scroll-margin-top: calc(var(--header-h, 60px) + 16px);
 }
-.fra-page::after {
-  content: '';
-  flex: 1;
-  border-top: 1px dashed var(--fra-rule);
-}
-[data-fra-theme='high-contrast'] .fra-page::after {
-  border-top-color: var(--fra-border);
-}
+
 
 /* Plain language: shown next to the original, never replacing it */
 .fra-plain-pair {
@@ -616,4 +610,24 @@ li.fra-speaking::before {
   .fra-tool {
     border: 1px solid ButtonText;
   }
+}
+
+/* AI marker: same look everywhere AI wrote something */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  vertical-align: 0.15em;
+  margin-inline: 0.4em;
+  padding: 0.1em 0.45em;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-family: var(--font-ui, system-ui, sans-serif);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  word-spacing: normal;
+  color: var(--fra-accent, #0f6b6b);
+  white-space: nowrap;
 }

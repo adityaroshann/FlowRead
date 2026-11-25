@@ -1,6 +1,6 @@
 /* global Buffer */
 import { expect, test } from '@playwright/test';
-import { MOCK_DOC, offlineApi, seedSample, tabTo, usePrefs } from './helpers.js';
+import { MOCK_DOC, expectNoSeriousAxe, offlineApi, seedSample, tabTo, usePrefs } from './helpers.js';
 
 test.describe('import', () => {
   test('paste text, keyboard only: converts, saves and opens the reader', async ({ page }) => {
@@ -113,8 +113,7 @@ test.describe('reader', () => {
     await offlineApi(page);
     await usePrefs(page, 'standard');
     await seedSample(page);
-    await page.getByRole('tab', { name: 'Adjust' }).click();
-    await page.getByRole('switch', { name: /Bold word starts/ }).click({ force: true });
+    // Bold word starts are on by default (Medium).
     await expect(page.locator('#blk-b2 b.fra-bws').first()).toBeVisible();
     // Marks still apply (bold + italic from paragraph.marks).
     const strongText = await page.locator('#blk-b2 strong').allTextContents();
@@ -122,11 +121,16 @@ test.describe('reader', () => {
     const emText = await page.locator('#blk-b2 em').allTextContents();
     expect(emText.join('')).toBe('look inside the cell');
     const before = await page.locator('#blk-b2').evaluate((el) => getComputedStyle(el).fontSize);
-    const slider = page.getByRole('slider', { name: 'Text size' });
-    await slider.focus();
-    for (let i = 0; i < 4; i += 1) await page.keyboard.press('ArrowRight');
+    await page.getByRole('button', { name: 'Larger text' }).click();
     const after = await page.locator('#blk-b2').evaluate((el) => getComputedStyle(el).fontSize);
     expect(parseFloat(after)).toBeGreaterThan(parseFloat(before));
+    // The More sheet holds the finer controls.
+    await page.getByRole('button', { name: 'More' }).click();
+    const slider = page.getByRole('slider', { name: 'Letter spacing' });
+    await slider.focus();
+    for (let i = 0; i < 4; i += 1) await page.keyboard.press('ArrowRight');
+    const ls = await page.locator('#blk-b2').evaluate((el) => parseFloat(getComputedStyle(el).letterSpacing));
+    expect(ls).toBeGreaterThan(0);
   });
 
   test('focus sessions step through sections and remember the place', async ({ page }) => {
@@ -317,8 +321,9 @@ test.describe('extension bridge', () => {
       }),
     );
     await page.evaluate(() => window.postMessage({ source: 'flowread-ext', type: 'ready', version: '0.1.0' }, '*'));
-    await page.getByRole('tab', { name: 'Adjust' }).click();
+    await page.getByRole('button', { name: 'More' }).click();
     await expect(page.getByText('Extension connected (0.1.0)')).toBeVisible();
+    await page.keyboard.press('Escape');
     await expect.poll(() => sent.some((m) => m.type === 'setSettings')).toBe(true);
     expect(sent.find((m) => m.type === 'setSettings').profileId).toBe('standard');
     await page.waitForTimeout(1600); // connect-time grace period for the extension's stored settings
@@ -343,5 +348,118 @@ test.describe('extension bridge', () => {
     );
     await expect(page).toHaveURL(/\/read\/doc_fromext$/);
     await expect(page.locator('h1')).toHaveText('From the extension');
+  });
+});
+
+
+test.describe('reading bar and profiles', () => {
+  const boldLen = (page) =>
+    page.locator('#blk-b2 b.fra-bws').evaluateAll((els) => els.reduce((n, el) => n + el.textContent.length, 0));
+
+  test('bold strength changes how much of each word is bold, and Off removes it', async ({ page }) => {
+    await offlineApi(page);
+    await usePrefs(page, 'standard');
+    await seedSample(page);
+    const medium = await boldLen(page);
+    await page.getByRole('radio', { name: 'Strong' }).check({ force: true });
+    await expect.poll(() => boldLen(page)).toBeGreaterThan(medium);
+    await page.getByRole('radio', { name: 'Light' }).check({ force: true });
+    await expect.poll(() => boldLen(page)).toBeLessThan(medium);
+    await page.getByRole('radio', { name: 'Off' }).check({ force: true });
+    await expect(page.locator('#blk-b2 b.fra-bws')).toHaveCount(0);
+  });
+
+  test('each profile looks different', async ({ page }) => {
+    await offlineApi(page);
+    await usePrefs(page, 'standard');
+    await seedSample(page);
+    const look = () =>
+      page.evaluate(() => {
+        const p = document.querySelector('#blk-b2');
+        const cs = getComputedStyle(p);
+        return {
+          bold: [...document.querySelectorAll('#blk-b2 b.fra-bws')].reduce((n, el) => n + el.textContent.length, 0),
+          ls: cs.letterSpacing,
+          size: cs.fontSize,
+          bg: getComputedStyle(document.querySelector('.rd')).backgroundColor,
+          focusLine: !!document.querySelector('.fra-focusline'),
+          timer: !!document.querySelector('.rtimer'),
+        };
+      });
+    const seen = {};
+    for (const id of ['standard', 'dyslexia', 'focus', 'screenreader', 'lowvision']) {
+      await page.selectOption('.rbar-select', id);
+      seen[id] = await look();
+    }
+    const keys = Object.values(seen).map((v) => JSON.stringify(v));
+    expect(new Set(keys).size).toBe(5);
+    expect(seen.focus.focusLine && seen.focus.timer).toBe(true);
+    expect(seen.standard.focusLine).toBe(false);
+    expect(seen.screenreader.bold).toBe(0);
+    expect(seen.focus.bold).toBeGreaterThan(seen.standard.bold);
+    expect(seen.dyslexia.bold).toBeLessThan(seen.standard.bold);
+  });
+
+  test('F toggles the focus line, which follows the pointer', async ({ page }) => {
+    await offlineApi(page);
+    await usePrefs(page, 'standard');
+    await seedSample(page);
+    await page.locator('h1').click();
+    await page.keyboard.press('f');
+    await expect(page.locator('.fra-focusline-band')).toBeVisible();
+    await page.mouse.move(600, 500);
+    await expect.poll(async () => page.locator('.fra-focusline-band').evaluate((el) => el.getBoundingClientRect().top + el.getBoundingClientRect().height / 2)).toBeGreaterThan(480);
+    await page.keyboard.press('f');
+    await expect(page.locator('.fra-focusline')).toHaveCount(0);
+  });
+});
+
+test.describe('flashcards', () => {
+  const CARDS = [
+    { front: 'What controls what enters the cell?', back: 'The plasma membrane.', kind: 'concept', sectionId: 's3' },
+    { front: 'Where is DNA kept in eukaryotic cells?', back: 'In the nucleus.', kind: 'concept', sectionId: 's2' },
+    { front: 'Cells divide instead of growing because of the ____ ratio.', back: 'surface-area-to-volume', kind: 'cloze', sectionId: 's5' },
+    { front: 'What do ribosomes build?', back: 'Proteins.', kind: 'term', sectionId: 's4' },
+  ];
+
+  test('make cards, practise them by keyboard, then take the quiz', async ({ page }) => {
+    await offlineApi(page);
+    await page.route('**/api/access/flashcards', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ cards: CARDS }) }),
+    );
+    await usePrefs(page, 'standard');
+    await seedSample(page);
+    await page.getByRole('tab', { name: 'Summary' }).click();
+    await page.getByRole('button', { name: 'Make flashcards' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Check what you remember' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Make flashcards' }).click();
+    await expect(dialog.getByText('0 of 4 known')).toBeVisible();
+    await expectNoSeriousAxe(page, 'flashcards');
+    for (let i = 0; i < 4; i += 1) {
+      await page.keyboard.press('Space');
+      await page.keyboard.press('2');
+    }
+    await expect(dialog.getByText('All 4 cards done')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Take the quiz' }).click();
+    await expect(dialog.getByText('Question 1 of 4')).toBeVisible();
+    await dialog.locator('.fc-option').first().click();
+    await expect(dialog.locator('.fc-option.is-right')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    // Cards are saved with the document.
+    await page.reload();
+    await page.getByRole('tab', { name: 'Summary' }).click();
+    await expect(page.getByRole('button', { name: 'Practise 4 flashcards' })).toBeVisible();
+  });
+
+  test('without the AI service the dialog says so', async ({ page }) => {
+    await offlineApi(page);
+    await usePrefs(page, 'standard');
+    await seedSample(page);
+    await page.getByRole('tab', { name: 'Summary' }).click();
+    await page.getByRole('button', { name: 'Make flashcards' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Check what you remember' });
+    await dialog.getByRole('button', { name: 'Make flashcards' }).click();
+    await expect(dialog.getByRole('alert')).toContainText('AI service');
   });
 });

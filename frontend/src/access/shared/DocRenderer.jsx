@@ -12,7 +12,11 @@ import {
 import { boldRanges } from '@flowread/core/boldStarts.js';
 import { resolveSettings, settingsToData, settingsToStyle } from '@flowread/core/profiles.js';
 import { safeHref } from './safeHref.js';
+import AiBadge from './AiBadge.jsx';
 import './docRenderer.css';
+
+/** The bold-word-starts value RichText expects: false, or the strength ratio. */
+const boldOf = (s) => (s?.boldStarts ? Number(s.boldIntensity) || true : false);
 
 const PLAIN_UNAVAILABLE = "Plain language isn't available right now. The original text is unchanged.";
 
@@ -38,7 +42,8 @@ export function RichText({ text, marks, boldStarts, highlight }) {
   const validMarks = (Array.isArray(marks) ? marks : []).filter(
     (m) => m && Number.isInteger(m.start) && Number.isInteger(m.end) && m.start >= 0 && m.end <= len && m.end > m.start,
   );
-  const bws = boldStarts ? boldRanges(value) : [];
+  // boldStarts: false, true (default strength) or a ratio (0.35 light … 0.55 strong)
+  const bws = boldStarts ? boldRanges(value, typeof boldStarts === 'number' ? boldStarts : undefined) : [];
   const hl = wordRange(value, highlight);
   if (!validMarks.length && !bws.length && !hl) return value;
 
@@ -159,7 +164,7 @@ function ParagraphBlock({ block, section, settings, onRequestPlain, onReadFrom, 
   const speaking = highlight && highlight.blockId === block.id;
   const original = (
     <p className={`fra-p${role ? ` fra-p-${role}` : ''}`} id={`blk-${block.id}`} data-block={block.id}>
-      <RichText text={block.text} marks={block.marks} boldStarts={settings.boldStarts} highlight={hlFor(highlight, block.id)} />
+      <RichText text={block.text} marks={block.marks} boldStarts={boldOf(settings)} highlight={hlFor(highlight, block.id)} />
     </p>
   );
 
@@ -173,10 +178,12 @@ function ParagraphBlock({ block, section, settings, onRequestPlain, onReadFrom, 
         {original}
       </div>
       <div className="fra-plain-col fra-plain-rewrite" id={regionId} aria-live="polite">
-        <p className="fra-plain-label">Plain language, written by AI. Check it against the original.</p>
+        <p className="fra-plain-label">
+          Plain language <AiBadge what="This rewrite" />
+        </p>
         {plain ? (
           <p className="fra-p">
-            <RichText text={plain} boldStarts={settings.boldStarts} />
+            <RichText text={plain} boldStarts={boldOf(settings)} />
           </p>
         ) : status === 'loading' ? (
           <p className="fra-status">
@@ -237,7 +244,7 @@ function ListBlock({ block, settings, highlight }) {
           const speaking = highlight && highlight.blockId === id;
           return (
             <li key={i} className={speaking ? 'fra-speaking' : undefined}>
-              <RichText text={item} boldStarts={settings.boldStarts} highlight={hlFor(highlight, id)} />
+              <RichText text={item} boldStarts={boldOf(settings)} highlight={hlFor(highlight, id)} />
             </li>
           );
         })}
@@ -317,7 +324,7 @@ function ImageBlock({ block, settings }) {
         <details className="fra-details">
           <summary>
             Image description
-            {block.altStatus === 'ai' && <span className="fra-muted"> (written by AI, not yet reviewed)</span>}
+            {block.altStatus === 'ai' && <AiBadge what="This image description" />}
           </summary>
           {/* Hidden from AT: the same text is already the image's alt. */}
           <p aria-hidden="true">{block.alt}</p>
@@ -454,6 +461,7 @@ export default function DocRenderer({
                       className={`fra-h${speaking ? ' fra-speaking' : ''}`}
                     >
                       <RichText text={b.text} highlight={hlFor(highlight, b.id)} />
+                      {b.ai && <AiBadge what="This heading" />}
                     </Heading>
                   );
                 }

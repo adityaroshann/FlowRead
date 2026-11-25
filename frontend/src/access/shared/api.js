@@ -243,3 +243,19 @@ export async function exportPdf(doc, settings, options, { signal } = {}) {
   if (!blob.size) throw new ApiError('The PDF service returned an empty file.', { status: resp.status });
   return blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' });
 }
+
+/**
+ * Study flashcards for a document (AI). Resolves to [{front, back, kind, sectionId}].
+ * Sends each section's plain text; the server samples long documents.
+ */
+export async function makeFlashcards(doc, sectionTextOf, opts) {
+  const sections = (doc.sections || []).map((s) => ({ id: s.id, heading: s.heading || '', text: sectionTextOf(s) }));
+  const data = await postJson('/flashcards', { title: doc.title || '', sections }, opts);
+  return Array.isArray(data?.cards) ? data.cards : [];
+}
+
+/** AI-suggested headings for a dense document: [{beforeBlockId, text}]. Never changes the text. */
+export async function suggestHeadings(paragraphs, opts) {
+  const data = await postJson('/structure', { paragraphs }, opts);
+  return Array.isArray(data?.headings) ? data.headings : [];
+}
