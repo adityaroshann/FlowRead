@@ -27,24 +27,34 @@ export function isComplexScript(text) {
   return COMPLEX_SCRIPT_RE.test(String(text ?? ''));
 }
 
-/** How many characters of a word core to bold. */
-export function boldLength(coreLength) {
+// Strength presets (share of each word that is bold), as in the original app.
+export const BOLD_INTENSITY = Object.freeze({ light: 0.35, medium: 0.45, strong: 0.55 });
+export const DEFAULT_BOLD_RATIO = BOLD_INTENSITY.medium;
+
+function ratioOf(r) {
+  const n = Number(r);
+  return Number.isFinite(n) && n > 0 ? Math.min(0.8, Math.max(0.2, n)) : DEFAULT_BOLD_RATIO;
+}
+
+/** How many characters of a word core to bold at a given ratio. */
+export function boldLength(coreLength, ratio = DEFAULT_BOLD_RATIO) {
   if (coreLength <= 0) return 0;
   if (coreLength <= 3) return 1;
-  return Math.ceil(coreLength * 0.4);
+  // Round to 6 decimals first so 0.55 * 20 (= 11.000000000000002) doesn't round up.
+  return Math.min(coreLength, Math.ceil(Number((coreLength * ratioOf(ratio)).toFixed(6))));
 }
 
 /**
  * Split one whitespace-free token into [prefix, boldPart, rest].
  * Tokens with no letters or digits come back as ['', '', token].
  */
-export function splitWordStart(word) {
+export function splitWordStart(word, ratio = DEFAULT_BOLD_RATIO) {
   const s = String(word ?? '');
   const m = WORD_RE.exec(s);
   if (!m) return ['', '', s];
   const [, pre, core, post] = m;
   if (isComplexScript(core)) return ['', '', s];
-  const n = boldLength([...core].length);
+  const n = boldLength([...core].length, ratio);
   const chars = [...core];
   return [pre, chars.slice(0, n).join(''), chars.slice(n).join('') + post];
 }
@@ -53,13 +63,13 @@ export function splitWordStart(word) {
  * Bold ranges for a whole string, as UTF-16 offsets [{start, end}], in order.
  * Whitespace separates words. Renderers wrap text.slice(start, end) in bold.
  */
-export function boldRanges(text) {
+export function boldRanges(text, ratio = DEFAULT_BOLD_RATIO) {
   const s = String(text ?? '');
   const out = [];
   const re = /\S+/g;
   let m;
   while ((m = re.exec(s))) {
-    const [pre, bold] = splitWordStart(m[0]);
+    const [pre, bold] = splitWordStart(m[0], ratio);
     if (!bold) continue;
     const start = m.index + pre.length;
     out.push({ start, end: start + bold.length });
@@ -71,11 +81,11 @@ export function boldRanges(text) {
  * Split text into alternating segments [{text, bold}] covering the whole input.
  * Handy for renderers that build nodes one segment at a time.
  */
-export function boldSegments(text) {
+export function boldSegments(text, ratio = DEFAULT_BOLD_RATIO) {
   const s = String(text ?? '');
   const segs = [];
   let at = 0;
-  for (const { start, end } of boldRanges(s)) {
+  for (const { start, end } of boldRanges(s, ratio)) {
     if (start > at) segs.push({ text: s.slice(at, start), bold: false });
     segs.push({ text: s.slice(start, end), bold: true });
     at = end;

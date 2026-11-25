@@ -9,7 +9,7 @@ describe('settings validation (bridge input)', () => {
     expect(s.theme).toBe('dark');
     expect(s.font).toBe(DEFAULT_SETTINGS.font);
     expect(s.textScale).toBe(2);
-    expect(s.boldStarts).toBe(false);
+    expect(s.boldStarts).toBe(DEFAULT_SETTINGS.boldStarts); // invalid value falls back to the default
     expect(s.focusLine).toBe(true);
     expect(s.letterSpacing).toBe(0);
     expect(Object.keys(s).sort()).toEqual(Object.keys(DEFAULT_SETTINGS).sort());

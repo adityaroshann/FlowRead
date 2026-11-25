@@ -23,13 +23,17 @@ export const DEFAULT_SETTINGS = Object.freeze({
   letterSpacing: 0, // em
   wordSpacing: 0, // em
   lineHeight: 1.6,
-  measure: 70, // max line length in ch
-  boldStarts: false, // bold the first letters of each word
+  measure: 66, // max line length in ch (60-70 is comfortable)
+  boldStarts: true, // bold the first letters of each word (FlowRead's core aid)
+  boldIntensity: 0.45, // share of each word in bold: 0.35 light, 0.45 medium, 0.55 strong
   readAloud: true, // show read-aloud controls (word highlighting)
   plainLanguage: true, // show per-paragraph "Plain language" buttons
   focusMode: false, // one section at a time with Next/Back
   summaries: false, // show "In this section" summary box
-  focusLine: false, // reading-line overlay
+  focusLine: false, // reading band that follows the pointer, caret and read-aloud word
+  focusLineSize: 2, // band height in lines (1-3)
+  focusDim: false, // dim the page above and below the band
+  readingTimer: false, // Pomodoro-style reading timer chip
   noMotion: false, // disable all motion (also honours prefers-reduced-motion)
   minimalChrome: false, // hide decorative/non-essential UI
   thickFocus: false, // heavier focus rings
@@ -42,7 +46,7 @@ export const PROFILES = {
   standard: {
     id: 'standard',
     label: 'Standard',
-    description: 'The document as published, with comfortable defaults.',
+    description: 'Comfortable defaults with medium bold word starts.',
     settings: { ...DEFAULT_SETTINGS },
   },
   dyslexia: {
@@ -59,7 +63,8 @@ export const PROFILES = {
       wordSpacing: 0.16,
       lineHeight: 1.8,
       measure: 65,
-      boldStarts: false,
+      boldStarts: true,
+      boldIntensity: 0.35,
       readAloud: true,
       plainLanguage: true,
     },
@@ -68,13 +73,18 @@ export const PROFILES = {
     id: 'focus',
     label: 'ADHD / Focus',
     description:
-      'One section at a time with a short summary first, progress and time left, and it remembers where you stopped.',
+      'Strong bold word starts, a reading band that follows you, one section at a time with a short summary first, and a reading timer.',
     settings: {
       ...DEFAULT_SETTINGS,
       focusMode: true,
       summaries: true,
+      boldStarts: true,
+      boldIntensity: 0.55,
+      focusLine: true,
+      focusDim: true,
+      readingTimer: true,
       lineHeight: 1.7,
-      measure: 65,
+      measure: 62,
       readAloud: true,
     },
   },
@@ -87,6 +97,7 @@ export const PROFILES = {
       ...DEFAULT_SETTINGS,
       minimalChrome: true,
       noMotion: true,
+      boldStarts: false,
       readAloud: false,
       imageDetails: false,
       announceSections: true,

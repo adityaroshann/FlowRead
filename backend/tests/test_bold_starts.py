@@ -23,4 +23,9 @@ def test_texts(text, expected):
 def test_ranges_are_code_points():
     s = "😀 reading"
     (r,) = bold_ranges(s)
-    assert s[r["start"]:r["end"]] == "rea"
+    assert s[r["start"]:r["end"]] == "read"
+
+
+@pytest.mark.parametrize("word,ratio,expected", TABLE["intensity"])
+def test_intensity(word, ratio, expected):
+    assert list(split_word_start(word, ratio)) == expected

@@ -14,7 +14,7 @@ interface Article {
 }
 
 /** Extract the main article with Readability, sanitised with DOMPurify. Runs locally. */
-export function extractArticle(doc: Document, boldStarts: boolean): Article | null {
+export function extractArticle(doc: Document, boldStarts: boolean, boldRatio?: number): Article | null {
   const clone = doc.cloneNode(true) as Document;
   // Undo our own markup in the copy so Readability sees the page's text.
   clone.querySelectorAll('flowread-ui, [data-flowread-ui]').forEach((n) => n.remove());
@@ -46,7 +46,7 @@ export function extractArticle(doc: Document, boldStarts: boolean): Article | nu
     title = hText;
     firstH.remove();
   }
-  if (boldStarts) boldifyTree(body, document);
+  if (boldStarts) boldifyTree(body, document, boldRatio);
   return {
     title,
     byline: parsed.byline || parsed.siteName || '',
@@ -61,7 +61,7 @@ export function ReaderView({ settings, onClose }: { settings: Settings; onClose:
   const dialog = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
-  const [article] = useState(() => extractArticle(document, settings.boldStarts));
+  const [article] = useState(() => extractArticle(document, settings.boldStarts, settings.boldIntensity));
   const [speaking, setSpeaking] = useState(false);
 
   // Remember what had focus (inside our shadow root) and give it back on close.

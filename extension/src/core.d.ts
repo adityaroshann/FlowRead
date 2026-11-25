@@ -9,11 +9,15 @@ declare module '@flowread/core' {
     lineHeight: number;
     measure: number;
     boldStarts: boolean;
+    boldIntensity: number;
     readAloud: boolean;
     plainLanguage: boolean;
     focusMode: boolean;
     summaries: boolean;
     focusLine: boolean;
+    focusLineSize: number;
+    focusDim: boolean;
+    readingTimer: boolean;
     noMotion: boolean;
     minimalChrome: boolean;
     thickFocus: boolean;
@@ -36,7 +40,7 @@ declare module '@flowread/core' {
   export function boldLength(n: number): number;
   export function splitWordStart(word: string): [string, string, string];
   export function boldRanges(text: string): { start: number; end: number }[];
-  export function boldSegments(text: string): { text: string; bold: boolean }[];
+  export function boldSegments(text: string, ratio?: number): { text: string; bold: boolean }[];
   export const THEME_COLORS: Readonly<Record<Settings['theme'], { bg: string; text: string; muted: string; accent: string; mark: string }>>;
   export const FONT_FAMILIES: Readonly<Record<Settings['font'], string>>;
   export function readingCss(s: Partial<Settings>, o?: { scope?: string; recolor?: boolean; boldClass?: string }): string;

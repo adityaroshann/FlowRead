@@ -51,9 +51,9 @@ export interface BoldPieces {
 }
 
 /** Build the nodes for one string, or null if it has nothing to bold. */
-export function boldPieces(doc: Document, text: string, boldClass = BOLD_CLASS): BoldPieces | null {
+export function boldPieces(doc: Document, text: string, boldClass = BOLD_CLASS, ratio?: number): BoldPieces | null {
   if (!HAS_TEXT.test(text) || COMPLEX_SCRIPT.test(text)) return null;
-  const segs = boldSegments(text);
+  const segs = boldSegments(text, ratio);
   const first = segs[0];
   if (!first || !segs.some((s) => s.bold)) return null;
   const lead = first.bold ? '' : first.text;
@@ -71,7 +71,7 @@ export function boldPieces(doc: Document, text: string, boldClass = BOLD_CLASS):
 const isSkippedElement = (el: Element | null) => !el || el.closest(SKIP_SELECTOR) !== null;
 
 /** One-shot, non-reversible bold word starts for a detached tree (reader view). */
-export function boldifyTree(root: Node, doc: Document = root.ownerDocument ?? document) {
+export function boldifyTree(root: Node, doc: Document = root.ownerDocument ?? document, ratio?: number) {
   const walker = doc.createTreeWalker(root, 0x1 | 0x4, {
     acceptNode: (n) =>
       n.nodeType === 1
@@ -81,7 +81,7 @@ export function boldifyTree(root: Node, doc: Document = root.ownerDocument ?? do
   const texts: Text[] = [];
   for (let n = walker.nextNode(); n; n = walker.nextNode()) texts.push(n as Text);
   for (const t of texts) {
-    const p = boldPieces(doc, t.nodeValue ?? '');
+    const p = boldPieces(doc, t.nodeValue ?? '', BOLD_CLASS, ratio);
     if (!p) continue;
     t.nodeValue = p.anchorText;
     t.after(...p.nodes);
@@ -91,6 +91,8 @@ export function boldifyTree(root: Node, doc: Document = root.ownerDocument ?? do
 export interface TransformOptions {
   css: string;
   boldStarts: boolean;
+  /** Share of each word in bold (0.35 light, 0.45 medium, 0.55 strong). */
+  boldRatio?: number;
   /** Text nodes per idle slice. */
   chunkSize?: number;
 }
@@ -116,7 +118,7 @@ export function createTransformer(doc: Document = document): Transformer {
       : (cb) => setTimeout(cb, 0);
 
   let on = false;
-  let opts: Required<TransformOptions> = { css: '', boldStarts: false, chunkSize: 200 };
+  let opts: Required<TransformOptions> = { css: '', boldStarts: false, boldRatio: 0.45, chunkSize: 200 };
   let styleEl: HTMLStyleElement | null = null;
   let htmlHadClass = false;
 
@@ -145,7 +147,7 @@ export function createTransformer(doc: Document = document): Transformer {
     if (records.has(t) || ours.has(t) || !t.isConnected) return;
     if (isSkippedElement(t.parentElement)) return;
     const value = t.nodeValue ?? '';
-    const p = boldPieces(doc, value);
+    const p = boldPieces(doc, value, BOLD_CLASS, opts.boldRatio);
     if (!p) return;
     for (const n of p.nodes) {
       ours.add(n);
@@ -320,6 +322,7 @@ export function createTransformer(doc: Document = document): Transformer {
     },
     enable(next) {
       const wasBold = on && opts.boldStarts;
+      const ratioChanged = next.boldRatio !== undefined && next.boldRatio !== opts.boldRatio;
       opts = { ...opts, ...next };
       if (!on) {
         const html = doc.documentElement;
@@ -330,6 +333,11 @@ export function createTransformer(doc: Document = document): Transformer {
       setStyle(opts.css);
       if (opts.boldStarts && !wasBold) startBold();
       else if (!opts.boldStarts && wasBold) stopBold();
+      else if (opts.boldStarts && wasBold && ratioChanged) {
+        // New strength: restore the page text, then bold it again.
+        stopBold();
+        startBold();
+      }
     },
     update(next) {
       if (!on) {

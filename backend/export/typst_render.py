@@ -46,7 +46,7 @@ import tempfile
 import threading
 from importlib import metadata
 
-from .bold_starts import bold_ranges
+from .bold_starts import bold_ranges, ratio_of
 
 log = logging.getLogger("flowread.export")
 
@@ -71,8 +71,8 @@ FALLBACK_FAMILIES = ["Atkinson Hyperlegible Next", "Literata", "Libertinus Serif
 BUNDLED_FAMILIES = ["Atkinson Hyperlegible Next", "Fraunces", "Lexend", "Literata", "OpenDyslexic"]
 
 DEFAULT_SETTINGS = {
-    "theme": "light", "font": "system", "textScale": 1, "letterSpacing": 0, "wordSpacing": 0,
-    "lineHeight": 1.6, "measure": 70, "boldStarts": False,
+    "theme": "light", "font": "atkinson", "textScale": 1, "letterSpacing": 0, "wordSpacing": 0,
+    "lineHeight": 1.6, "measure": 66, "boldStarts": True, "boldIntensity": 0.45,
 }
 DEFAULT_OPTIONS = {"pageSize": "A4", "includeSummaries": False, "includePlain": False,
                    "includePageRefs": True, "includeToc": False}
@@ -143,7 +143,8 @@ def resolve_style(settings: dict | None, options: dict | None) -> dict:
         "mt": round(20 * MM, 2),
         "mb": round(22 * MM, 2),
         "textwidth": pw - 2 * mx,
-        "boldStarts": s.get("boldStarts") is True,
+        "boldStarts": s.get("boldStarts") is not False,
+        "boldRatio": ratio_of(s.get("boldIntensity")),
         "options": {
             "pageSize": "Letter" if o.get("pageSize") == "Letter" else "A4",
             "includeSummaries": o.get("includeSummaries") is True,
@@ -185,7 +186,7 @@ def _utf16_to_cp(text: str) -> list[int]:
     return out
 
 
-def runs(text, marks=None, bold_starts: bool = False) -> list[dict]:
+def runs(text, marks=None, bold_starts=False) -> list[dict]:
     """Split text into styled runs: {t, b?, i?, h?, w?}. Marks use UTF-16 offsets."""
     if text is None:
         return []
@@ -213,7 +214,9 @@ def runs(text, marks=None, bold_starts: bool = False) -> list[dict]:
         else:
             spans.append((to_cp[s16], to_cp[e16], "b" if m["type"] == "bold" else "i", True))
     if bold_starts:
-        for r in bold_ranges(t):
+        # bold_starts is the bold ratio (True means the default ratio).
+        ratio = bold_starts if isinstance(bold_starts, float) else None
+        for r in (bold_ranges(t, ratio) if ratio else bold_ranges(t)):
             spans.append((r["start"], r["end"], "w", True))
     cuts = {0, len(t)}
     for s, e, _, _ in spans:
@@ -298,7 +301,7 @@ def _write_image(src, workdir: str, n: int) -> tuple[str, int, int] | None:
 
 def build_model(doc: dict, style: dict, workdir: str) -> dict:
     opts = style["options"]
-    bs = style["boldStarts"]
+    bs = style["boldRatio"] if style["boldStarts"] else False
     title = clean(doc.get("title")) or "Untitled document"
     lang, region = split_lang(doc.get("lang"))
     items: list[dict] = [{"k": "title", "t": title}]

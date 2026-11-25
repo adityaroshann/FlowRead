@@ -98,7 +98,7 @@ async function run(ctx: ContentScriptContext) {
   // ---- on / off ----
   function setOn(on: boolean) {
     const { settings } = store.get();
-    if (on) transformer.enable({ css: pageCss(settings), boldStarts: settings.boldStarts });
+    if (on) transformer.enable({ css: pageCss(settings), boldStarts: settings.boldStarts, boldRatio: settings.boldIntensity });
     else {
       // Remove the UI first so the page DOM matches what it was before.
       store.set({ on: false });
@@ -112,7 +112,7 @@ async function run(ctx: ContentScriptContext) {
   function reapply() {
     if (!transformer.on) return;
     const { settings } = store.get();
-    transformer.update({ css: pageCss(settings), boldStarts: settings.boldStarts });
+    transformer.update({ css: pageCss(settings), boldStarts: settings.boldStarts, boldRatio: settings.boldIntensity });
   }
 
   const actions: PageActions = {

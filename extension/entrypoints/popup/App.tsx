@@ -5,7 +5,7 @@ import { CONFIG } from '../../src/config';
 import { KEYS, isCustomised } from '../../src/lib/store';
 import { originPattern, sanitizeSites } from '../../src/lib/schema';
 import type { TabState } from '../../src/lib/messages';
-import { ProfilePicker, Slider, Switch, em, pct, times } from '../../src/ui/controls';
+import { BoldStrength, ProfilePicker, Slider, Switch, em, pct, times } from '../../src/ui/controls';
 import { useExtensionState } from '../../src/ui/useExtensionState';
 
 async function activeTabId() {
@@ -148,6 +148,7 @@ export function App() {
           {customised && <p className="muted small">Your adjustments are applied on top of this profile.</p>}
           <section className="stack" aria-label="Quick adjustments">
             <Switch label="Bold word starts" checked={s.boldStarts} onChange={(v) => ext.patchSettings({ boldStarts: v })} />
+            {s.boldStarts && <BoldStrength value={s.boldIntensity} onChange={(v) => ext.patchSettings({ boldIntensity: v })} />}
             <Slider label="Text size" value={s.textScale} min={0.8} max={2} step={0.1} format={pct} onChange={(v) => ext.patchSettings({ textScale: v })} />
             <Slider label="Letter spacing" value={s.letterSpacing} min={0} max={0.35} step={0.01} format={em} onChange={(v) => ext.patchSettings({ letterSpacing: v })} />
             <Slider label="Line spacing" value={s.lineHeight} min={1.2} max={2.4} step={0.1} format={times} onChange={(v) => ext.patchSettings({ lineHeight: v })} />

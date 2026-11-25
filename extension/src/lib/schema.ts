@@ -9,6 +9,8 @@ const RANGES: Partial<Record<keyof Settings, [number, number]>> = {
   wordSpacing: [0, 0.5],
   lineHeight: [1.2, 2.4],
   measure: [40, 100],
+  boldIntensity: [0.2, 0.8],
+  focusLineSize: [1, 3],
 };
 
 export function sanitizeSettings(input: unknown, base: Settings = { ...DEFAULT_SETTINGS }): Settings {

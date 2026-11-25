@@ -25,3 +25,7 @@ test('boldRanges are in order and inside the text', () => {
     last = r.end;
   }
 });
+
+test('intensity presets match the shared fixture', () => {
+  for (const [word, ratio, expected] of fx.intensity) assert.deepEqual(splitWordStart(word, ratio), expected, `${word} @ ${ratio}`);
+});

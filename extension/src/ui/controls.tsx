@@ -114,3 +114,25 @@ export function ProfilePicker({
 export const pct = (v: number) => `${Math.round(v * 100)}%`;
 export const em = (v: number) => (v === 0 ? 'Normal' : `+${v.toFixed(2)} em`);
 export const times = (v: number) => `${v.toFixed(1)}×`;
+
+const STRENGTHS = [
+  { label: 'Light', value: 0.35 },
+  { label: 'Medium', value: 0.45 },
+  { label: 'Strong', value: 0.55 },
+];
+
+/** Light / Medium / Strong for bold word starts (native radios, so it is keyboard and screen-reader friendly). */
+export function BoldStrength({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const near = STRENGTHS.reduce((a, b) => (Math.abs(b.value - value) < Math.abs(a.value - value) ? b : a));
+  return (
+    <fieldset className="seg">
+      <legend className="seg-legend">Bold strength</legend>
+      {STRENGTHS.map((o) => (
+        <label key={o.label} className="seg-opt">
+          <input type="radio" name="bold-strength" checked={near.value === o.value} onChange={() => onChange(o.value)} />
+          <span>{o.label}</span>
+        </label>
+      ))}
+    </fieldset>
+  );
+}

@@ -1,5 +1,5 @@
 {
- "_doc": "Shared by packages/core/test and backend/tests. Each case: input token or text -> segments [text, bold]. Python and JS must produce identical segments. Words containing complex-script characters (Arabic, Indic, SE Asian, CJK; see COMPLEX_SCRIPT_RE) are never split. Hebrew base letters (U+0590-05FF) do not join, so they are split normally.",
+ "_doc": "Shared by packages/core/test and backend/tests. words/texts use the default ratio 0.45 (Medium). intensity rows: [word, ratio, expected split]; Light=0.35, Medium=0.45, Strong=0.55. bold length = 1 for cores of <=3 chars, else ceil(len*ratio) (ratio product rounded to 6 decimals first). Words containing complex-script characters (Arabic, Indic, SE Asian, CJK; see COMPLEX_SCRIPT_RE) are never split. Hebrew base letters do not join and are split normally.",
  "words": [
   [
    "a",
@@ -37,8 +37,8 @@
    "reading",
    [
     "",
-    "rea",
-    "ding"
+    "read",
+    "ing"
    ]
   ],
   [
@@ -53,32 +53,32 @@
    "\"Hello,",
    [
     "\"",
-    "He",
-    "llo,"
+    "Hel",
+    "lo,"
    ]
   ],
   [
    "(cells)",
    [
     "(",
-    "ce",
-    "lls)"
+    "cel",
+    "ls)"
    ]
   ],
   [
    "don't",
    [
     "",
-    "do",
-    "n't"
+    "don",
+    "'t"
    ]
   ],
   [
    "well-known",
    [
     "",
-    "well",
-    "-known"
+    "well-",
+    "known"
    ]
   ],
   [
@@ -109,16 +109,16 @@
    "naïve",
    [
     "",
-    "na",
-    "ïve"
+    "naï",
+    "ve"
    ]
   ],
   [
    "Ärger!",
    [
     "",
-    "Är",
-    "ger!"
+    "Ärg",
+    "er!"
    ]
   ],
   [
@@ -256,6 +256,170 @@
      "ll",
      false
     ]
+   ]
+  ]
+ ],
+ "intensity": [
+  [
+   "reading",
+   0.35,
+   [
+    "",
+    "rea",
+    "ding"
+   ]
+  ],
+  [
+   "reading",
+   0.45,
+   [
+    "",
+    "read",
+    "ing"
+   ]
+  ],
+  [
+   "reading",
+   0.55,
+   [
+    "",
+    "read",
+    "ing"
+   ]
+  ],
+  [
+   "accessibility",
+   0.35,
+   [
+    "",
+    "acces",
+    "sibility"
+   ]
+  ],
+  [
+   "accessibility",
+   0.45,
+   [
+    "",
+    "access",
+    "ibility"
+   ]
+  ],
+  [
+   "accessibility",
+   0.55,
+   [
+    "",
+    "accessib",
+    "ility"
+   ]
+  ],
+  [
+   "structure",
+   0.35,
+   [
+    "",
+    "stru",
+    "cture"
+   ]
+  ],
+  [
+   "structure",
+   0.45,
+   [
+    "",
+    "struc",
+    "ture"
+   ]
+  ],
+  [
+   "structure",
+   0.55,
+   [
+    "",
+    "struc",
+    "ture"
+   ]
+  ],
+  [
+   "photosynthesis",
+   0.35,
+   [
+    "",
+    "photo",
+    "synthesis"
+   ]
+  ],
+  [
+   "photosynthesis",
+   0.45,
+   [
+    "",
+    "photosy",
+    "nthesis"
+   ]
+  ],
+  [
+   "photosynthesis",
+   0.55,
+   [
+    "",
+    "photosyn",
+    "thesis"
+   ]
+  ],
+  [
+   "cell",
+   0.35,
+   [
+    "",
+    "ce",
+    "ll"
+   ]
+  ],
+  [
+   "cell",
+   0.45,
+   [
+    "",
+    "ce",
+    "ll"
+   ]
+  ],
+  [
+   "cell",
+   0.55,
+   [
+    "",
+    "cel",
+    "l"
+   ]
+  ],
+  [
+   "membranes",
+   0.35,
+   [
+    "",
+    "memb",
+    "ranes"
+   ]
+  ],
+  [
+   "membranes",
+   0.45,
+   [
+    "",
+    "membr",
+    "anes"
+   ]
+  ],
+  [
+   "membranes",
+   0.55,
+   [
+    "",
+    "membr",
+    "anes"
    ]
   ]
  ]

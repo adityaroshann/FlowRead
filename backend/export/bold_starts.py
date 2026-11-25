@@ -34,15 +34,31 @@ def is_complex_script(text) -> bool:
     return bool(COMPLEX_SCRIPT_RE.search("" if text is None else str(text)))
 
 
-def bold_length(core_length: int) -> int:
+# Strength presets (share of each word that is bold), as in the original app.
+BOLD_INTENSITY = {"light": 0.35, "medium": 0.45, "strong": 0.55}
+DEFAULT_BOLD_RATIO = BOLD_INTENSITY["medium"]
+
+
+def ratio_of(r) -> float:
+    try:
+        n = float(r)
+    except (TypeError, ValueError):
+        return DEFAULT_BOLD_RATIO
+    if not math.isfinite(n) or n <= 0:
+        return DEFAULT_BOLD_RATIO
+    return min(0.8, max(0.2, n))
+
+
+def bold_length(core_length: int, ratio=DEFAULT_BOLD_RATIO) -> int:
     if core_length <= 0:
         return 0
     if core_length <= 3:
         return 1
-    return math.ceil(core_length * 0.4)
+    # Round to 6 decimals first, like the JS (toFixed(6)), so float noise never rounds up.
+    return min(core_length, math.ceil(round(core_length * ratio_of(ratio), 6)))
 
 
-def split_word_start(word) -> tuple[str, str, str]:
+def split_word_start(word, ratio=DEFAULT_BOLD_RATIO) -> tuple[str, str, str]:
     s = "" if word is None else str(word)
     m = WORD_RE.match(s)
     if not m:
@@ -50,16 +66,16 @@ def split_word_start(word) -> tuple[str, str, str]:
     pre, core, post = m.group(1), m.group(2), m.group(3)
     if is_complex_script(core):
         return ("", "", s)
-    n = bold_length(len(core))
+    n = bold_length(len(core), ratio)
     return (pre, core[:n], core[n:] + post)
 
 
-def bold_ranges(text) -> list[dict]:
+def bold_ranges(text, ratio=DEFAULT_BOLD_RATIO) -> list[dict]:
     """Bold ranges as code-point offsets [{start, end}], in order."""
     s = "" if text is None else str(text)
     out = []
     for m in _TOKEN_RE.finditer(s):
-        pre, bold, _ = split_word_start(m.group(0))
+        pre, bold, _ = split_word_start(m.group(0), ratio)
         if not bold:
             continue
         start = m.start() + len(pre)
@@ -67,11 +83,11 @@ def bold_ranges(text) -> list[dict]:
     return out
 
 
-def bold_segments(text) -> list[dict]:
+def bold_segments(text, ratio=DEFAULT_BOLD_RATIO) -> list[dict]:
     s = "" if text is None else str(text)
     segs = []
     at = 0
-    for r in bold_ranges(s):
+    for r in bold_ranges(s, ratio):
         if r["start"] > at:
             segs.append({"text": s[at:r["start"]], "bold": False})
         segs.append({"text": s[r["start"]:r["end"]], "bold": True})

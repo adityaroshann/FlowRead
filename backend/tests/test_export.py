@@ -172,7 +172,7 @@ def test_bold_starts_are_visual_not_strong():
     pdf = fitz.open(stream=render_pdf(d, {"boldStarts": True}))
     spans = [s for b in pdf[0].get_text("dict")["blocks"] for l in b.get("lines", []) for s in l["spans"]]
     bold = [s["text"] for s in spans if s["flags"] & 16]
-    assert "Rea" in bold and "access" in bold
+    assert "Read" in bold and "access" in bold  # medium (0.45)
     assert "/Strong" not in {t for t, _ in _struct_tags(pdf)}
     assert "Reading accessibility matters." in _norm(pdf[0].get_text())
 
