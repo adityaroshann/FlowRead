@@ -1,6 +1,6 @@
 """Accessibility rules checker and score for an AccessDoc.
 
-``frontend/src/access/shared/check.js`` mirrors this file exactly. Exact
+``packages/core/src/check.js`` mirrors this file exactly. Exact
 definitions (so both sides agree):
 
 Doc-level issues come first (blockId and sectionId are null), then issues in
@@ -13,6 +13,9 @@ issues in block order, then its section-too-long issue (blockId null).
   whose ``alt`` is empty/whitespace while altStatus is not "decorative".
 - image-alt-unreviewed (serious): image block with altStatus "ai" and a
   non-empty alt (an image with empty alt only gets image-alt-missing).
+- page-needs-ocr (serious): image block with origin "page" (a scanned page
+  kept as a picture because OCR was unavailable). It replaces the alt-text
+  rules for that block (no image-alt-missing / image-alt-unreviewed).
 - table-no-headers (serious): table block whose ``headers`` is empty.
 - math-no-spoken (moderate): math block whose ``spoken`` is empty/whitespace.
 - heading-skip (moderate): walking headings in document order starting from
@@ -109,7 +112,19 @@ def check_doc(doc: dict) -> dict:
                 prev_level = level
             elif t == "image":
                 status = b.get("altStatus")
-                if status == "missing" or (status != "decorative" and _blank(b.get("alt"))):
+                if b.get("origin") == "page":
+                    # A scanned page kept as a picture (OCR unavailable). This one
+                    # issue replaces the alt-text rules for that block.
+                    issues.append(
+                        _issue(
+                            "page-needs-ocr",
+                            "serious",
+                            "This page is a scanned image and could not be converted to text.",
+                            bid,
+                            sid,
+                        )
+                    )
+                elif status == "missing" or (status != "decorative" and _blank(b.get("alt"))):
                     issues.append(_issue("image-alt-missing", "critical", "Image has no text alternative.", bid, sid))
                 elif status == "ai":
                     issues.append(

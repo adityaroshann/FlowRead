@@ -219,3 +219,334 @@ def make_course_docx(with_image: bool = True) -> bytes:
     out = io.BytesIO()
     d.save(out)
     return out.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# v2 conversion fixtures (each exercises one engine rule)
+# ---------------------------------------------------------------------------
+
+
+def _png_bytes(width: int, height: int, color=(230, 240, 250), noise: bool = False) -> bytes:
+    from PIL import Image, ImageDraw
+
+    im = Image.new("RGB", (width, height), color)
+    if noise:
+        d = ImageDraw.Draw(im)
+        for i in range(0, width, 40):
+            d.line((i, 0, width - i, height), fill=(200, 210, 230), width=3)
+    out = io.BytesIO()
+    im.save(out, "PNG")
+    return out.getvalue()
+
+
+def _lines(w: "_Writer", x: float, y: float, lines: list[str], step: float = 14, **kw) -> float:
+    for line in lines:
+        w.text(x, y, line, **kw)
+        y += step
+    return y
+
+
+def make_background_pdf() -> bytes:
+    """A slide-style page: a full-page background picture with text drawn on top."""
+    import fitz
+
+    doc = fitz.open()
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    p.insert_image(p.rect, stream=_png_bytes(800, 1035, noise=True))
+    w = _Writer(p)
+    w.text(72, 100, "Photosynthesis Basics", size=24, bold=True)
+    w.text(72, 150, "Light reactions", size=16, bold=True)
+    _lines(w, 72, 175, [
+        "Plants capture light energy in the thylakoid membranes of the",
+        "chloroplast and store it as chemical energy.",
+    ])
+    w.done()
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def make_crosspage_pdf() -> bytes:
+    """Page 1 ends mid-sentence; page 2 continues it. Then a clean page break that must not merge."""
+    import fitz
+
+    doc = fitz.open()
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    w = _Writer(p)
+    w.text(72, 100, "Membranes", size=16, bold=True)
+    _lines(w, 72, 130, [
+        "The plasma membrane is a thin layer that surrounds the cell. It is",
+        "built from a double layer of phospholipids, and the proteins that sit",
+    ])
+    w.done()
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    w = _Writer(p)
+    _lines(w, 72, 80, ["inside it move substances across the membrane in both directions."])
+    _lines(w, 72, 110, ["This second paragraph ends the page cleanly."])
+    w.done()
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    w = _Writer(p)
+    _lines(w, 72, 80, ["Transport proteins come in two broad kinds."])
+    w.done()
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def make_bold_heading_pdf() -> bytes:
+    """Bold lines that are and are not headings."""
+    import fitz
+
+    doc = fitz.open()
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    w = _Writer(p)
+    _lines(w, 72, 80, [
+        "Osmosis is the movement of water across a partially permeable membrane",
+        "from a dilute solution to a concentrated one, and",
+    ])
+    # A bold short line inside the paragraph flow (no whitespace above or below).
+    w.text(72, 108, "water potential matters here", bold=True)
+    _lines(w, 72, 122, ["because it predicts the direction in which water will move overall."])
+    # An isolated bold line: a real heading.
+    w.text(72, 170, "Worked example", bold=True)
+    _lines(w, 72, 200, ["A potato cylinder placed in pure water gains mass as water enters it."])
+    # Numbered heading at body size, not bold.
+    w.text(72, 250, "2.1 Active transport")
+    _lines(w, 72, 280, ["Active transport moves substances against a concentration gradient."])
+    w.done()
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def make_vector_pdf() -> bytes:
+    """A vector diagram (shapes + short labels), an underline and a rule that must be ignored."""
+    import fitz
+
+    doc = fitz.open()
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    w = _Writer(p)
+    w.text(72, 80, "The cycle below has four stages that repeat in order every time.")
+    # Underline beneath a word, and a horizontal rule: not diagrams.
+    p.draw_line(fitz.Point(72, 83), fitz.Point(110, 83), color=(0, 0, 0), width=0.6)
+    p.draw_line(fitz.Point(72, 100), fitz.Point(540, 100), color=(0.5, 0.5, 0.5), width=0.8)
+    cx, cy = 300, 260
+    for dx, dy in ((0, -90), (110, 0), (0, 90), (-110, 0)):
+        p.draw_circle(fitz.Point(cx + dx, cy + dy), 28, color=(0.1, 0.3, 0.7), fill=(0.8, 0.9, 1), width=1.5)
+    for a, b in (((300, 198), (382, 245)), ((382, 275), (300, 322)), ((300, 322), (218, 275)), ((218, 245), (300, 198))):
+        p.draw_line(fitz.Point(*a), fitz.Point(*b), color=(0, 0, 0), width=1.2)
+    for (x, y), label in (((290, 174), "G1"), ((403, 264), "S"), ((290, 354), "G2"), ((184, 264), "M")):
+        w.text(x, y, label, size=10)
+    _lines(w, 72, 420, ["Each stage prepares the cell for the next one, ending in division."])
+    w.done()
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def make_borderless_table_pdf() -> bytes:
+    """Page 1: a table drawn with aligned text only. Page 2: ordinary prose (no table)."""
+    import fitz
+
+    doc = fitz.open()
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    w = _Writer(p)
+    w.text(72, 80, "Enzymes and their optimum conditions are listed below.")
+    rows = [
+        ("Enzyme", "Optimum pH", "Site"),
+        ("Pepsin", "2", "Stomach"),
+        ("Amylase", "7", "Mouth"),
+        ("Trypsin", "8", "Small intestine"),
+        ("Lipase", "8", "Pancreas"),
+    ]
+    y = 120
+    for r, row in enumerate(rows):
+        for x, cell in zip((72, 240, 380), row):
+            w.text(x, y, cell, bold=(r == 0))
+        y += 18
+    w.text(72, y + 30, "Each enzyme works best within a narrow range of conditions.")
+    w.done()
+
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    w = _Writer(p)
+    prose = [
+        "Enzymes are biological catalysts that speed up chemical reactions in",
+        "living cells. They are proteins with a specific three dimensional shape,",
+        "and the active site binds to a substrate that fits it closely. When the",
+        "temperature rises too far the shape changes and the enzyme stops working,",
+        "which is called denaturation. Most human enzymes work best at around body",
+        "temperature, and each one also has an optimum pH at which it is fastest.",
+    ]
+    _lines(w, 72, 80, prose)
+    _lines(w, 72, 200, prose[::-1])
+    w.done()
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def make_marks_pdf() -> bytes:
+    """A paragraph with a bold phrase, an italic phrase and a link."""
+    import fitz
+
+    doc = fitz.open()
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    tw = fitz.TextWriter(p.rect)
+    reg, bold, ital = fitz.Font("helv"), fitz.Font("hebo"), fitz.Font("heit")
+    x, y = 72, 100
+    for text, font in (
+        ("Read the ", reg),
+        ("safety rules", bold),
+        (" before the lab and see ", reg),
+        ("Lab Manual", ital),
+        (" online.", reg),
+    ):
+        _, end = tw.append((x, y), text, font=font, fontsize=11)
+        x = end.x
+    tw.write_text(p)
+    hits = p.search_for("Lab Manual")
+    p.insert_link({"kind": fitz.LINK_URI, "from": hits[0], "uri": "https://example.org/manual"})
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def make_scanned_pdf(pages: int = 2) -> bytes:
+    """Pages that are only a picture of text (no text layer)."""
+    import fitz
+    from PIL import Image, ImageDraw
+
+    doc = fitz.open()
+    for _ in range(pages):
+        im = Image.new("RGB", (850, 1100), (250, 250, 245))
+        d = ImageDraw.Draw(im)
+        for row in range(12):
+            d.rectangle((80, 120 + row * 60, 760, 140 + row * 60), fill=(60, 60, 60))
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        p = doc.new_page(width=PAGE_W, height=PAGE_H)
+        p.insert_image(p.rect, stream=buf.getvalue())
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+MATH_LINES = ["∑ xᵢ ≤ ∫ f(x) dx ± Δ", "α + β ≥ γ ⇒ θ ≠ λ", "∂u/∂t = ∇²u − μ"]
+
+
+def make_math_pdf() -> bytes:
+    """A maths-heavy page (many operator and Greek glyphs)."""
+    import fitz
+
+    doc = fitz.open()
+    p = doc.new_page(width=PAGE_W, height=PAGE_H)
+    w = _Writer(p)
+    w.text(72, 80, "Kinematics", size=16, bold=True)
+    font = fitz.Font("cjk")  # wide glyph coverage for maths symbols
+    y = 120
+    for line in MATH_LINES:
+        w.tw.append((72, y), line, font=font, fontsize=12)
+        y += 30
+    w.done()
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def _add_hyperlink(paragraph, text: str, url: str):
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    r_id = paragraph.part.relate_to(url, RT.HYPERLINK, is_external=True)
+    h = OxmlElement("w:hyperlink")
+    h.set(qn("r:id"), r_id)
+    r = OxmlElement("w:r")
+    t = OxmlElement("w:t")
+    t.text = text
+    r.append(t)
+    h.append(r)
+    paragraph._p.append(h)
+
+
+def _xml(fragment: str):
+    from docx.oxml import parse_xml
+
+    ns = (
+        'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+        'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" '
+        'xmlns:v="urn:schemas-microsoft-com:vml"'
+    )
+    return parse_xml(fragment.replace(">", f" {ns}>", 1))
+
+
+def make_rich_docx() -> bytes:
+    """Nested lists, custom heading style, marks + link, text box, content control,
+    table with a header row and a picture in a cell, a page break and an OMML equation."""
+    from docx import Document
+    from docx.enum.style import WD_STYLE_TYPE
+    from docx.shared import Inches
+
+    d = Document()
+    d.core_properties.title = "Unit 2: Ecology"
+    custom = d.styles.add_style("Chapter Heading", WD_STYLE_TYPE.PARAGRAPH)
+    custom.base_style = d.styles["Heading 1"]
+    d.add_paragraph("Food webs", style="Chapter Heading")
+
+    p = d.add_paragraph("Energy flows from ")
+    p.add_run("producers").bold = True
+    p.add_run(" to ")
+    p.add_run("consumers").italic = True
+    p.add_run(". See ")
+    _add_hyperlink(p, "the field guide", "https://example.org/guide")
+    p.add_run(".")
+
+    # A two-level bullet definition (the default template's are single-level).
+    numbering = d.part.numbering_part.element
+    lvls = "".join(
+        f'<w:lvl w:ilvl="{i}"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="-"/>'
+        f'<w:pPr><w:ind w:left="{720 * (i + 1)}" w:hanging="360"/></w:pPr></w:lvl>'
+        for i in range(2)
+    )
+    first_num = numbering.find("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}num")
+    first_num.addprevious(_xml(f'<w:abstractNum w:abstractNumId="90">{lvls}</w:abstractNum>'))
+    numbering.append(_xml('<w:num w:numId="90"><w:abstractNumId w:val="90"/></w:num>'))
+    for name, lvl in (("Producers", 0), ("Plants", 1), ("Algae", 1), ("Consumers", 0)):
+        item = d.add_paragraph(name)
+        item._p.get_or_add_pPr().append(
+            _xml(f'<w:numPr><w:ilvl w:val="{lvl}"/><w:numId w:val="90"/></w:numPr>')
+        )
+
+    body = d.element.body
+    sect = body[-1]  # sectPr stays last
+    sdt = _xml(
+        "<w:sdt><w:sdtPr/><w:sdtContent><w:p><w:r><w:t>Text inside a content control.</w:t></w:r></w:p>"
+        "</w:sdtContent></w:sdt>"
+    )
+    sect.addprevious(sdt)
+    box = _xml(
+        "<w:p><w:r><w:t>Before the box.</w:t></w:r><w:r><w:pict><v:shape><v:textbox><w:txbxContent>"
+        "<w:p><w:r><w:t>Text inside a text box.</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r></w:p>"
+    )
+    sect.addprevious(box)
+
+    t = d.add_table(rows=3, cols=2)
+    vals = [("Organism", "Role"), ("Oak", "Producer"), ("Fox", "Consumer")]
+    for r, row in enumerate(vals):
+        for c, v in enumerate(row):
+            cell = t.cell(r, c)
+            cell.text = ""
+            cell.paragraphs[0].add_run(v).bold = r == 0
+    t.cell(2, 1).add_paragraph().add_run().add_picture(io.BytesIO(make_png()), width=Inches(1))
+
+    d.add_page_break()
+    d.add_paragraph("Energy pyramids", style="Heading 2")
+    eq = _xml(
+        "<w:p><m:oMathPara><m:oMath><m:r><m:t>E=mc</m:t></m:r><m:sSup><m:e><m:r><m:t></m:t></m:r></m:e>"
+        "<m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup></m:oMath></m:oMathPara></w:p>"
+    )
+    sect.addprevious(eq)
+    d.add_paragraph("Only about ten percent of energy passes to the next level.")
+    out = io.BytesIO()
+    d.save(out)
+    return out.getvalue()

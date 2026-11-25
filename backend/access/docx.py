@@ -1,261 +1,257 @@
-"""DOCX to AccessDoc raw blocks, using paragraph styles, tables and inline images."""
+"""DOCX to AccessDoc raw blocks.
+
+mammoth converts the document body to semantic HTML (it understands
+numbering, content controls, text boxes, hyperlinks, tables and images), and
+``html_blocks.HtmlConverter`` turns that HTML into blocks. python-docx is
+still used for what mammoth does not expose: core properties (title), the
+default language, which paragraph styles are headings (custom styles based on
+a heading style, or with an outline level), and the plain text of OMML
+equations.
+
+Before mammoth runs, the document XML is rewritten in memory:
+- every OMML equation (``m:oMathPara`` / ``m:oMath``) becomes a placeholder
+  run, so its position survives and we can emit a ``math`` block there;
+- every explicit page break (``w:br w:type="page"``) and every
+  ``w:lastRenderedPageBreak`` (where Word last paginated) becomes a
+  page-break placeholder, used for ``pageMarker`` blocks.
+"""
 
 from __future__ import annotations
 
 import io
 import re
+import zipfile
 
-from .common import (
-    MIN_IMAGE_SIDE,
-    clean_text,
-    image_block,
-    image_to_data_url,
-    looks_like_header,
-    looks_like_math,
-    match_list_item,
-    math_block,
-)
+from .common import MIN_IMAGE_SIDE, clean_text, image_block, image_to_data_url
+from .html_blocks import MATH_CLOSE, MATH_OPEN, PAGE_BREAK, HtmlConverter
 
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 M_NS = "http://schemas.openxmlformats.org/officeDocument/2006/math"
-A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
-R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-WP_NS = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+
+_HEADING_STYLE = re.compile(r"^heading\s*(\d)$", re.IGNORECASE)
 
 
 def _w(tag: str) -> str:
     return f"{{{W_NS}}}{tag}"
 
 
-_HEADING_STYLE = re.compile(r"^heading\s*(\d)$", re.IGNORECASE)
-_FIG_CAPTION_RE = re.compile(r"^(?:figure|fig\.|image|diagram|chart)\s*\d*", re.IGNORECASE)
-_TABLE_CAPTION_RE = re.compile(r"^(?:table|tab\.)\s*\d+", re.IGNORECASE)
+def _m(tag: str) -> str:
+    return f"{{{M_NS}}}{tag}"
 
 
-def _style_name(p) -> str:
-    try:
-        return p.style.name or ""
-    except Exception:
-        return ""
+# ---------------------------------------------------------------------------
+# python-docx: metadata and style analysis
+# ---------------------------------------------------------------------------
 
 
-def _num_format(doc, p) -> str | None:
-    """Return the numFmt (e.g. 'bullet', 'decimal') for a numbered paragraph, or None."""
-    ppr = p._p.pPr
-    if ppr is None or ppr.numPr is None:
+def _style_heading_level(style, depth: int = 0) -> int | None:
+    """Heading level of a paragraph style: Heading N, an outline level, or based on one."""
+    if style is None or depth > 10:
         return None
+    m = _HEADING_STYLE.match(style.name or "")
+    if m:
+        return int(m.group(1))
     try:
-        num_id = ppr.numPr.numId.val
-        ilvl = ppr.numPr.ilvl.val if ppr.numPr.ilvl is not None else 0
-        numbering = doc.part.numbering_part.element
-        num = next(n for n in numbering.iter(_w("num")) if n.get(_w("numId")) == str(num_id))
-        abs_id = num.find(_w("abstractNumId")).get(_w("val"))
-        absn = next(a for a in numbering.iter(_w("abstractNum")) if a.get(_w("abstractNumId")) == abs_id)
-        lvl = next(l for l in absn.iter(_w("lvl")) if l.get(_w("ilvl")) == str(ilvl))
-        return lvl.find(_w("numFmt")).get(_w("val"))
+        ppr = style.element.pPr
+        if ppr is not None:
+            ol = ppr.find(_w("outlineLvl"))
+            if ol is not None:
+                lvl = int(ol.get(_w("val")))
+                if 0 <= lvl <= 5:
+                    return lvl + 1
     except Exception:
-        return "bullet"
+        pass
+    try:
+        return _style_heading_level(style.base_style, depth + 1)
+    except Exception:
+        return None
 
 
-def _paragraph_images(doc, p) -> list[tuple[bytes, str]]:
-    """(blob, author_alt) for each inline/anchored picture in the paragraph."""
-    out = []
-    for drawing in p._p.iter(_w("drawing")):
-        descr = ""
-        for dp in drawing.iter(f"{{{WP_NS}}}docPr"):
-            descr = (dp.get("descr") or "").strip()
-        for blip in drawing.iter(f"{{{A_NS}}}blip"):
-            rid = blip.get(f"{{{R_NS}}}embed")
-            if not rid:
+def _style_map(doc) -> str:
+    lines = [
+        "p[style-name='Title'] => h1.doc-title:fresh",
+        "p[style-name='Subtitle'] => p.subtitle:fresh",
+        "p[style-name='Caption'] => p.caption:fresh",
+        "r[style-name='Strong'] => strong",
+        "r[style-name='Emphasis'] => em",
+    ]
+    try:
+        from docx.enum.style import WD_STYLE_TYPE
+
+        for st in doc.styles:
+            if st.type != WD_STYLE_TYPE.PARAGRAPH or not st.name or "'" in st.name:
                 continue
-            try:
-                out.append((doc.part.related_parts[rid].blob, descr))
-            except Exception:
+            if st.name.lower() in ("title", "subtitle", "caption"):
                 continue
-    return out
+            lvl = _style_heading_level(st)
+            if lvl:
+                lines.append(f"p[style-name='{st.name}'] => h{min(6, lvl)}:fresh")
+    except Exception:
+        pass
+    return "\n".join(lines)
 
 
-def _math_text(p) -> str:
-    parts = []
-    for om in p._p.iter(f"{{{M_NS}}}oMath"):
-        parts.append("".join(t.text or "" for t in om.iter(f"{{{M_NS}}}t")))
-    return clean_text(" ".join(parts))
+def _default_lang(doc) -> str:
+    try:
+        lang_el = doc.styles.element.find(f".//{_w('rPrDefault')}//{_w('lang')}")
+        if lang_el is not None:
+            return lang_el.get(_w("val")) or ""
+    except Exception:
+        pass
+    return ""
 
 
-def _has_page_break(p) -> bool:
-    for br in p._p.iter(_w("br")):
+# ---------------------------------------------------------------------------
+# XML preprocessing (placeholders for equations and page breaks)
+# ---------------------------------------------------------------------------
+
+
+def _placeholder_run(text: str):
+    from lxml import etree
+
+    r = etree.Element(_w("r"))
+    t = etree.SubElement(r, _w("t"))
+    t.text = text
+    t.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+    return r
+
+
+def _preprocess(data: bytes) -> tuple[bytes, list[str], bool]:
+    """Returns (docx bytes for mammoth, equation texts, has_page_breaks)."""
+    from lxml import etree
+
+    zin = zipfile.ZipFile(io.BytesIO(data))
+    xml = zin.read("word/document.xml")
+    root = etree.fromstring(xml)
+    maths: list[str] = []
+
+    # Outermost equations only (oMathPara contains oMath).
+    targets = []
+    for el in root.iter(_m("oMathPara"), _m("oMath")):
+        if any(a.tag in (_m("oMathPara"), _m("oMath")) for a in el.iterancestors()):
+            continue
+        targets.append(el)
+    for el in targets:
+        text = clean_text("".join(t.text or "" for t in el.iter(_m("t"))))
+        idx = len(maths)
+        maths.append(text)
+        run = _placeholder_run(f"{MATH_OPEN}{idx}{MATH_CLOSE}")
+        parent = el.getparent()
+        if el.tag == _m("oMathPara") and parent is not None and parent.tag == _w("body"):
+            p = etree.Element(_w("p"))
+            p.append(run)
+            parent.replace(el, p)
+        elif parent is not None:
+            parent.replace(el, run)
+
+    breaks = 0
+    for br in list(root.iter(_w("br"))):
         if br.get(_w("type")) == "page":
-            return True
-    return any(True for _ in p._p.iter(_w("lastRenderedPageBreak")))
+            parent = br.getparent()
+            parent.replace(br, _placeholder_run(PAGE_BREAK)[0])  # the w:t inside a run
+            breaks += 1
+    for lr in list(root.iter(_w("lastRenderedPageBreak"))):
+        parent = lr.getparent()
+        parent.replace(lr, _placeholder_run(PAGE_BREAK)[0])
+        breaks += 1
+
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            if item.filename == "word/document.xml":
+                zout.writestr(item, etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True))
+            else:
+                zout.writestr(item, zin.read(item.filename))
+    return out.getvalue(), maths, breaks > 0
 
 
-def _table_block(table) -> dict | None:
-    rows: list[list[str]] = []
-    first_bold = False
-    first_marked_header = False
-    for ri, row in enumerate(table.rows):
-        cells = []
-        seen = set()
-        for cell in row.cells:
-            if id(cell._tc) in seen:
-                continue  # horizontally merged cell repeats
-            seen.add(id(cell._tc))
-            cells.append(clean_text(cell.text.replace("\n", " ")))
-        if ri == 0:
-            trpr = row._tr.trPr
-            first_marked_header = trpr is not None and trpr.find(_w("tblHeader")) is not None
-            runs = [r for c in row.cells for para in c.paragraphs for r in para.runs if r.text.strip()]
-            first_bold = bool(runs) and all(r.bold for r in runs)
-        if any(cells):
-            rows.append(cells)
-    if not rows:
-        return None
-    width = max(len(r) for r in rows)
-    rows = [r + [""] * (width - len(r)) for r in rows]
-    is_header = first_marked_header or looks_like_header(rows[0], rows[1:], first_bold)
-    return {
-        "type": "table",
-        "caption": None,
-        "headers": rows[0] if is_header else [],
-        "rows": rows[1:] if is_header else rows,
-    }
+# ---------------------------------------------------------------------------
+# Main entry
+# ---------------------------------------------------------------------------
 
 
 def extract_docx(data: bytes, progress=None) -> tuple[str, list[dict], str]:
     """Returns (title, raw_blocks, lang)."""
+    import mammoth
+    from bs4 import BeautifulSoup
     from docx import Document
-    from docx.table import Table
-    from docx.text.paragraph import Paragraph
 
     progress = progress or (lambda *a: None)
     doc = Document(io.BytesIO(data))
     progress("layout", "Reading document structure…", 10)
-
     title = clean_text(doc.core_properties.title or "")
-    lang = ""
-    try:
-        lang_el = doc.styles.element.find(f".//{_w('rPrDefault')}//{_w('lang')}")
-        if lang_el is not None:
-            lang = lang_el.get(_w("val")) or ""
-    except Exception:
-        pass
+    lang = _default_lang(doc)
+    style_map = _style_map(doc)
 
-    raw: list[dict] = []
-    title_from_style = False
-    page = 1
-    page_breaks = any(_has_page_break(p) for p in doc.paragraphs)
-    if page_breaks:
-        raw.append({"type": "pageMarker", "n": 1})
+    prepared, maths, has_breaks = _preprocess(data)
 
-    lst: dict | None = None
+    images: dict[str, dict] = {}
 
-    def close_list():
-        nonlocal lst
-        if lst and lst["items"]:
-            raw.append({"type": "list", "ordered": lst["ordered"], "items": lst["items"]})
-        lst = None
+    def convert_image(image):
+        try:
+            with image.open() as f:
+                blob = f.read()
+        except Exception:
+            return []
+        enc = image_to_data_url(blob)
+        if not enc or enc[1] < MIN_IMAGE_SIDE or enc[2] < MIN_IMAGE_SIDE:
+            return []  # undecodable (e.g. EMF) or an icon-sized picture
+        key = f"img{len(images)}"
+        blk = image_block(enc[0])
+        alt = clean_text(image.alt_text or "")
+        if alt:
+            # Author-supplied alt text: keep it, but staff must still review it.
+            blk["alt"], blk["altStatus"], blk["_author_alt"] = alt, "ai", True
+        images[key] = blk
+        return [mammoth.html.element("img", {"src": "", "data-ref": key})]
 
-    body = doc.element.body
-    for child in body.iterchildren():
-        if child.tag == _w("tbl"):
-            close_list()
-            tb = _table_block(Table(child, doc))
-            if tb:
-                prev = raw[-1] if raw else None
-                if prev and prev["type"] == "paragraph" and _TABLE_CAPTION_RE.match(prev["text"]):
-                    tb["caption"] = raw.pop()["text"]
-                raw.append(tb)
-            continue
-        if child.tag != _w("p"):
-            continue
-        p = Paragraph(child, doc)
-        style = _style_name(p)
-        text = clean_text(p.text)
+    result = mammoth.convert_to_html(
+        io.BytesIO(prepared), style_map=style_map, convert_image=convert_image, include_default_style_map=True
+    )
+    progress("layout", "Rebuilding structure…", 30)
+    soup = BeautifulSoup(f"<body>{result.value}</body>", "lxml")
 
-        for blob, descr in _paragraph_images(doc, p):
-            enc = image_to_data_url(blob)
-            if not enc or enc[1] < MIN_IMAGE_SIDE or enc[2] < MIN_IMAGE_SIDE:
-                continue
-            close_list()
-            blk = image_block(enc[0])
-            if descr:
-                # Author-supplied alt text: keep it, but staff must still review it.
-                blk["alt"] = descr
-                blk["altStatus"] = "ai"
-                blk["_author_alt"] = True
-            raw.append(blk)
+    def resolve(tag):
+        blk = images.get(tag.get("data-ref") or "")
+        return dict(blk) if blk else None
 
-        math_text = _math_text(p)
-        if math_text:
-            close_list()
-            raw.append(math_block(math_text))
-            text = ""
-
-        if text:
-            sl = style.lower()
-            m = _HEADING_STYLE.match(style)
-            if sl == "title":
-                close_list()
-                if not title_from_style:
-                    title = text
-                    title_from_style = True
-                else:
-                    raw.append({"type": "heading", "text": text, "level": 1, "_docx_level": 1})
-            elif sl == "subtitle":
-                close_list()
-                raw.append({"type": "paragraph", "text": text})
-            elif m:
-                close_list()
-                raw.append({"type": "heading", "text": text, "_docx_level": int(m.group(1))})
-            elif sl == "caption" or (_FIG_CAPTION_RE.match(text) and raw and raw[-1]["type"] == "image"):
-                close_list()
-                if raw and raw[-1]["type"] == "image" and not raw[-1].get("caption"):
-                    raw[-1]["caption"] = text
-                else:
-                    raw.append({"type": "paragraph", "text": text})
-            else:
-                fmt = _num_format(doc, p)
-                is_list = "list" in sl or fmt is not None
-                ordered = ("number" in sl) or (fmt not in (None, "bullet", "none"))
-                body_text = text
-                if not is_list:
-                    item = match_list_item(text)
-                    if item:
-                        is_list = True
-                        ordered, body_text = item
-                if is_list:
-                    if lst is None or lst["ordered"] != ordered:
-                        close_list()
-                        lst = {"ordered": ordered, "items": []}
-                    lst["items"].append(body_text)
-                elif looks_like_math(text):
-                    close_list()
-                    raw.append(math_block(text))
-                else:
-                    close_list()
-                    raw.append({"type": "paragraph", "text": text})
-
-        if page_breaks and _has_page_break(p):
-            close_list()
-            page += 1
-            raw.append({"type": "pageMarker", "n": page})
-
-    close_list()
-    if raw and raw[-1]["type"] == "pageMarker":
+    conv = HtmlConverter(image_resolver=resolve, math_texts=maths, page_breaks=has_breaks)
+    raw = conv.convert(soup.body)
+    if has_breaks:
+        raw.insert(0, {"type": "pageMarker", "n": 1})
+    while raw and raw[-1]["type"] == "pageMarker":
         raw.pop()
+    # Collapse consecutive markers (several breaks with nothing between them).
+    compact: list[dict] = []
+    for b in raw:
+        if b["type"] == "pageMarker" and compact and compact[-1]["type"] == "pageMarker":
+            compact[-1] = b
+        else:
+            compact.append(b)
+    raw = compact
 
-    # Title fallback: the first Heading 1 when there is no Title style/property.
+    # Title: core property, else the Title style, else the first Heading 1.
     headings = [b for b in raw if b["type"] == "heading"]
-    if not title and headings and headings[0]["_docx_level"] == 1:
+    style_titles = [b for b in headings if b.get("_doc_title")]
+    if style_titles:
+        first = style_titles[0]
+        if not title:
+            title = first["text"]
+        raw.remove(first)
+        headings.remove(first)
+        for b in style_titles[1:]:
+            b["_src_level"] = 1
+    if not title and headings and headings[0]["_src_level"] == 1:
         title = headings[0]["text"]
         raw.remove(headings[0])
         headings = headings[1:]
 
     # Rank-compress heading levels so the shallowest becomes h2 (title is h1).
-    used = sorted({b["_docx_level"] for b in headings})
+    used = sorted({b["_src_level"] for b in headings})
     rank = {lvl: min(6, i + 2) for i, lvl in enumerate(used)}
     for b in headings:
-        b["level"] = rank[b.pop("_docx_level")]
+        b["level"] = rank[b.pop("_src_level")]
+        b.pop("_doc_title", None)
 
     # Image context.
     for i, b in enumerate(raw):

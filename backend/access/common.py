@@ -197,15 +197,26 @@ def image_to_data_url(data: bytes, ext: str | None = None) -> tuple[str, int, in
     return url, im.size[0], im.size[1]
 
 
-def image_block(src: str, context: str = "", caption: str | None = None, alt: str = "") -> dict:
+def image_block(
+    src: str, context: str = "", caption: str | None = None, alt: str = "", origin: str = "raster"
+) -> dict:
     return {
         "type": "image",
         "src": src,
         "alt": alt,
         "altStatus": "ai" if alt else "missing",
         "caption": caption,
+        "origin": origin,
         "_context": context,
     }
+
+
+def decorative_image_block(src: str, origin: str = "raster") -> dict:
+    """An image that carries no information (page background, flourish). Never sent to AI."""
+    b = image_block(src, origin=origin)
+    b["altStatus"] = "decorative"
+    b["_skip_ai"] = True
+    return b
 
 
 def math_block(text: str) -> dict:
@@ -286,3 +297,134 @@ def iter_blocks(doc: dict):
     for s in doc.get("sections", []):
         for b in s.get("blocks", []):
             yield s, b
+
+
+# ---------------------------------------------------------------------------
+# Inline marks (bold / italic / link)
+# ---------------------------------------------------------------------------
+#
+# Internally converters keep marks as ``{"start", "end", "type", "href"?}``
+# with *code-point* offsets (Python string indices) in a private ``_marks``
+# list. ``finalize_marks`` converts them to the UTF-16 offsets the contract
+# requires (JavaScript string indices) when a paragraph is emitted. The two
+# differ only for characters outside the Basic Multilingual Plane (emoji,
+# maths alphanumerics such as U+1D465), which take two UTF-16 code units.
+
+SAFE_HREF_RE = re.compile(r"^(https?:|mailto:)", re.IGNORECASE)
+_INLINE_WS = re.compile(r"[ \t\u00a0\r\n]+")
+
+
+def utf16_len(s: str) -> int:
+    return len(s.encode("utf-16-le")) // 2
+
+
+def safe_href(href) -> str | None:
+    """Return the href if it is http(s) or mailto, else None."""
+    if not isinstance(href, str):
+        return None
+    h = href.strip()
+    if not h or len(h) > 2000 or not SAFE_HREF_RE.match(h):
+        return None
+    if any(ord(c) < 32 for c in h):
+        return None
+    return h
+
+
+def _clean_inline(text: str) -> str:
+    text = text.replace("\u00ad", "").replace("\ufb01", "fi").replace("\ufb02", "fl")
+    return _INLINE_WS.sub(" ", text)
+
+
+def _mark_key(m: dict):
+    return (m["type"], m.get("href"))
+
+
+def merge_marks(text: str, marks: list[dict]) -> list[dict]:
+    """Sort, trim whitespace off each range, and merge touching ranges of the same kind.
+
+    Two ranges of the same kind are merged when only whitespace separates them,
+    so a bold phrase that wraps onto the next line stays one mark.
+    """
+    out: list[dict] = []
+    for m in sorted(marks, key=lambda m: (m["type"], m.get("href") or "", m["start"])):
+        s, e = max(0, m["start"]), min(len(text), m["end"])
+        while s < e and text[s].isspace():
+            s += 1
+        while e > s and text[e - 1].isspace():
+            e -= 1
+        if e <= s:
+            continue
+        nm = {**m, "start": s, "end": e}
+        if out and _mark_key(out[-1]) == _mark_key(nm) and not text[out[-1]["end"]:s].strip():
+            out[-1]["end"] = max(out[-1]["end"], e)
+        else:
+            out.append(nm)
+    out.sort(key=lambda m: (m["start"], m["end"], m["type"]))
+    return out
+
+
+def rich_from_segments(segs) -> tuple[str, list[dict]]:
+    """Build (text, marks) from ``[(raw_text, attrs)]``.
+
+    ``attrs`` is an iterable of mark dicts without offsets, e.g.
+    ``[{"type": "bold"}, {"type": "link", "href": "https://…"}]``.
+    Whitespace is collapsed exactly like ``clean_text``.
+    """
+    text = ""
+    marks: list[dict] = []
+    for raw, attrs in segs:
+        t = _clean_inline(raw or "")
+        if (not text or text.endswith(" ")) and t.startswith(" "):
+            t = t[1:]
+        if not t:
+            continue
+        start = len(text)
+        text += t
+        for a in attrs or ():
+            marks.append({**a, "start": start, "end": len(text)})
+    stripped = text.rstrip(" ")
+    return stripped, merge_marks(stripped, marks)
+
+
+def rich_join(acc: str, acc_marks: list[dict], nxt: str, nxt_marks: list[dict]) -> tuple[str, list[dict]]:
+    """``fix_join`` for text that carries marks."""
+    lead = len(nxt) - len(nxt.lstrip())
+    nxt_s = nxt.strip()
+    result = fix_join(acc, nxt)
+    if not nxt_s:
+        return result, list(acc_marks)
+    off = len(result) - len(nxt_s)
+    marks = [{**m, "end": min(m["end"], off)} for m in acc_marks if m["start"] < off]
+    marks += [
+        {**m, "start": m["start"] - lead + off, "end": min(len(nxt_s), m["end"] - lead) + off}
+        for m in nxt_marks
+        if m["end"] - lead > 0
+    ]
+    return result, merge_marks(result, marks)
+
+
+def finalize_marks(text: str, marks: list[dict] | None) -> list[dict]:
+    """Code-point offsets -> UTF-16 offsets, href sanitised, empty marks dropped."""
+    out = []
+    for m in merge_marks(text, marks or []):
+        if m["type"] not in ("bold", "italic", "link"):
+            continue
+        item = {"start": utf16_len(text[: m["start"]]), "end": utf16_len(text[: m["end"]]), "type": m["type"]}
+        if m["type"] == "link":
+            href = safe_href(m.get("href"))
+            if not href:
+                continue
+            item["href"] = href
+        out.append(item)
+    return out
+
+
+def paragraph_block(text: str, marks: list[dict] | None = None, role: str | None = None) -> dict:
+    """A raw paragraph block; ``marks`` use code-point offsets (converted here)."""
+    b: dict = {"type": "paragraph", "text": text}
+    fm = finalize_marks(text, marks)
+    if fm:
+        b["marks"] = fm
+    if role in ("notes", "caption"):
+        b["role"] = role
+    return b

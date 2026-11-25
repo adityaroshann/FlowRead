@@ -38,7 +38,29 @@ class FakeMessages:
         self.calls.append(kwargs)
         system = kwargs.get("system", "")
         content = kwargs["messages"][0]["content"]
-        if "alt text" in system:
+        if "scanned page" in system:
+            text = json.dumps({"blocks": [
+                {"type": "heading", "text": "Scanned heading", "level": 9, "ordered": False, "items": [],
+                 "headers": [], "rows": [], "latex": "", "spoken": ""},
+                {"type": "paragraph", "text": "Text read\x00 from the  scan.", "level": 0, "ordered": False,
+                 "items": [], "headers": [], "rows": [], "latex": "", "spoken": ""},
+                {"type": "list", "text": "", "level": 0, "ordered": "yes", "items": ["one", "", 2],
+                 "headers": [], "rows": [], "latex": "", "spoken": ""},
+                {"type": "table", "text": "", "level": 0, "ordered": False, "items": [],
+                 "headers": ["A", "B"], "rows": [["1"], ["2", "3", "4"]], "latex": "", "spoken": ""},
+                {"type": "math", "text": "x^2", "level": 0, "ordered": False, "items": [], "headers": [],
+                 "rows": [], "latex": "x^{2}", "spoken": "x squared"},
+                {"type": "script", "text": "<script>", "level": 0, "ordered": False, "items": [],
+                 "headers": [], "rows": [], "latex": "", "spoken": ""},
+            ]})
+        elif "mathematics on one page" in system:
+            n = content[1]["text"].count("\n")
+            text = json.dumps({"items": [
+                {"index": i, "latex": f"\\alpha_{i}", "spoken": f"vision reading {i}"} for i in range(1, n + 1)
+            ] + [{"index": 99, "latex": "bad", "spoken": "out of range"}]})
+        elif "define a word" in system:
+            text = "A short plain definition."
+        elif "alt text" in system:
             if self.fail_images:
                 raise anthropic.APIConnectionError(request=None)
             text = json.dumps({"alt": "Diagram of an animal cell with a central nucleus.", "decorative": False})
