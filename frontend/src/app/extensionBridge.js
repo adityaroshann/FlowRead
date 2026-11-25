@@ -17,6 +17,9 @@ let status = { connected: false, version: null };
 const statusListeners = new Set();
 let started = false;
 let navigateFn = null;
+// After we push our settings on connect, ignore the extension's own stored
+// settings that it sends in reply to hello (they would overwrite ours).
+let ignoreSettingsUntil = 0;
 
 function setStatus(next) {
   status = next;
@@ -35,24 +38,34 @@ function isValidDoc(doc) {
   return doc && typeof doc === 'object' && typeof doc.id === 'string' && /^[\w-]{1,80}$/.test(doc.id) && Array.isArray(doc.sections);
 }
 
+function pushSettings() {
+  const p = getPrefs();
+  post('setSettings', { settings: p.settings, profileId: p.profileId });
+}
+
 async function onMessage(event) {
-  if (event.source !== window) return;
+  if (event.source !== window || event.origin !== window.location.origin) return;
   const msg = event.data;
   if (!msg || typeof msg !== 'object' || msg.source !== 'flowread-ext') return;
 
   switch (msg.type) {
     case 'ready': {
-      const version = typeof msg.version === 'string' ? msg.version.slice(0, 32) : msg.settings?.version || null;
+      const version = typeof msg.version === 'string' ? msg.version.slice(0, 32) : null;
+      const first = !status.connected;
       setStatus({ connected: true, version });
+      if (!first) break;
       // The app's settings win on connect when the reader has chosen a profile;
       // otherwise adopt whatever the extension has.
       const prefs = getPrefs();
-      if (prefs.chosen) post('setSettings', { settings: prefs.settings });
-      else post('getSettings');
+      if (prefs.chosen) {
+        ignoreSettingsUntil = Date.now() + 1500;
+        pushSettings();
+      } else post('getSettings');
       break;
     }
     case 'settings': {
       if (!msg.settings || typeof msg.settings !== 'object') return;
+      if (Date.now() < ignoreSettingsUntil) return;
       const settings = resolveSettings(msg.settings);
       const prev = getPrefs();
       if (JSON.stringify(prev.settings) === JSON.stringify(settings)) return;
@@ -84,7 +97,7 @@ export function startExtensionBridge(navigate) {
   // Push app-side setting changes to the extension.
   subscribePrefs(() => {
     const p = getPrefs();
-    if (status.connected && p.lastSource !== 'extension') post('setSettings', { settings: p.settings });
+    if (status.connected && p.lastSource !== 'extension') pushSettings();
   });
   post('hello');
 }

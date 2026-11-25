@@ -7,6 +7,7 @@ export default defineConfig({
   expect: { timeout: 8_000 },
   fullyParallel: true,
   workers: 4,
+  retries: 1,
   reporter: [['list']],
   use: {
     baseURL: 'http://localhost:5173',

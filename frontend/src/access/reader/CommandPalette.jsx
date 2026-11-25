@@ -35,6 +35,7 @@ export default function CommandPalette({ isOpen, onOpenChange, groups, onRun }) 
                 Esc
               </span>
             </SearchField>
+            <div className="cmd-scroll" tabIndex={0} role="region" aria-label="Commands list">
             <Menu
               className="menu cmd-menu"
               items={groups}
@@ -60,6 +61,7 @@ export default function CommandPalette({ isOpen, onOpenChange, groups, onRun }) 
                 </MenuSection>
               )}
             </Menu>
+            </div>
           </Autocomplete>
         </Dialog>
       </Modal>

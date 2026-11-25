@@ -59,6 +59,9 @@ export async function seedSample(page) {
 }
 
 export async function expectNoSeriousAxe(page, label = '') {
+  // Let open/close animations finish so colours are measured at full opacity.
+  await expect(page.locator('[data-entering], [data-exiting]')).toHaveCount(0);
+  await page.waitForTimeout(250);
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   const bad = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   const summary = bad.map((v) => `${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`);

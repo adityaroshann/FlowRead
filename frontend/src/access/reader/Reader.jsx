@@ -247,6 +247,7 @@ function ReaderView({ initialDoc }) {
   const [railTab, setRailTab] = useState('contents');
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteSel, setPaletteSel] = useState(false);
+  const [paletteKey, setPaletteKey] = useState(0);
   const [download, setDownload] = useState({ open: false, format: 'pdf' });
   const [source, setSource] = useState(null);
   const [originalOpen, setOriginalOpen] = useState(false);
@@ -468,7 +469,10 @@ function ReaderView({ initialDoc }) {
       if (mod && !e.shiftKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setPaletteOpen((o) => {
-          if (!o) setPaletteSel(!!selRef.current?.hasSelection());
+          if (!o) {
+            setPaletteSel(!!selRef.current?.hasSelection());
+            setPaletteKey((k) => k + 1);
+          }
           return !o;
         });
       } else if (mod && e.shiftKey && e.key.toLowerCase() === 'e') {
@@ -496,6 +500,7 @@ function ReaderView({ initialDoc }) {
   };
   const openPalette = useCallback(() => {
     setPaletteSel(!!selRef.current?.hasSelection());
+    setPaletteKey((k) => k + 1);
     setPaletteOpen(true);
   }, []);
 
@@ -873,7 +878,7 @@ function ReaderView({ initialDoc }) {
         </ModalOverlay>
       )}
 
-      <CommandPalette isOpen={paletteOpen} onOpenChange={setPaletteOpen} groups={groups} onRun={(it) => (it.sel ? runSelection(it.sel) : it.run())} />
+      <CommandPalette key={paletteKey} isOpen={paletteOpen} onOpenChange={setPaletteOpen} groups={groups} onRun={(it) => (it.sel ? runSelection(it.sel) : it.run())} />
       <DownloadDialog
         isOpen={download.open}
         initialFormat={download.format}

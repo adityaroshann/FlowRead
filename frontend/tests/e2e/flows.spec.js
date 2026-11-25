@@ -28,7 +28,7 @@ test.describe('import', () => {
     await expect(page.getByRole('heading', { name: 'Light reactions' })).toBeVisible();
 
     await page.goto('/library');
-    await expect(page.getByRole('link', { name: 'Photosynthesis notes' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Photosynthesis notes', exact: true })).toBeVisible();
   });
 
   test('shows a "waking the server" state instead of a frozen spinner', async ({ page }) => {
@@ -319,6 +319,8 @@ test.describe('extension bridge', () => {
     await page.getByRole('tab', { name: 'Adjust' }).click();
     await expect(page.getByText('Extension connected (0.1.0)')).toBeVisible();
     await expect.poll(() => sent.some((m) => m.type === 'setSettings')).toBe(true);
+    expect(sent.find((m) => m.type === 'setSettings').profileId).toBe('standard');
+    await page.waitForTimeout(1600); // connect-time grace period for the extension's stored settings
 
     await page.evaluate(() =>
       window.postMessage({ source: 'flowread-ext', type: 'settings', settings: { theme: 'dark', font: 'lexend' } }, '*'),
