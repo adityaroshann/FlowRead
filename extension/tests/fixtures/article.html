@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Rivers Carve Valleys | The Field Notebook</title>
+<style>
+  body { margin: 0; font-family: Georgia, serif; background: #fff; color: #222; }
+  .site-header { display: flex; gap: 16px; align-items: center; padding: 12px 24px; background: #123; color: #fff; }
+  .site-header a { color: #fff; }
+  .layout { display: grid; grid-template-columns: 1fr 260px; gap: 32px; max-width: 1100px; margin: 0 auto; padding: 24px; }
+  article p { font-size: 18px; line-height: 1.5; }
+  aside { font-size: 14px; background: #f4f4f4; padding: 16px; }
+  .byline { color: #666; }
+  pre { background: #eee; padding: 12px; }
+  .comment-box { border: 1px solid #ccc; min-height: 60px; padding: 8px; }
+  footer { padding: 24px; background: #eee; }
+  .icon { display: inline-block; width: 1em; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <span class="icon" aria-hidden="true">&#9776;</span>
+  <strong>The Field Notebook</strong>
+  <nav aria-label="Main"><a href="#">Earth</a> · <a href="#">Water</a> · <a href="#">Weather</a></nav>
+  <form role="search"><label>Search <input type="search" name="q" value="valleys"></label></form>
+</header>
+<div class="layout">
+  <main>
+    <article>
+      <h1>How Rivers Carve Valleys</h1>
+      <p class="byline">By the Field Notebook team · 6 minute read</p>
+      <p>Every valley you have walked through tells a slow story. Long before roads and towns, water found the easiest path downhill and began to wear the land away, one grain at a time.</p>
+      <h2>Water as a tool</h2>
+      <p>A river does three jobs at once. It <em>erodes</em> the bed and banks, it <strong>transports</strong> the loosened material, and it deposits that material where the current slows down. The balance between these jobs decides the shape of the valley.</p>
+      <p>Fast mountain streams cut downwards. They carry boulders that grind the bed like sandpaper, which is why young valleys often have a sharp V shape when you look at them in cross-section.</p>
+      <figure>
+        <svg width="200" height="80" role="img" aria-label="Sketch of a V-shaped valley"><polyline points="0,0 100,80 200,0" fill="none" stroke="#333"/><text x="70" y="40">V shape</text></svg>
+        <figcaption>A young valley seen from the side: steep walls meeting at a narrow floor.</figcaption>
+      </figure>
+      <h2>From V to U and beyond</h2>
+      <p>Lower down, the slope eases and the river begins to swing from side to side. These loops, called meanders, push sideways into the banks. Over thousands of years the valley floor widens and fills with soft sediment.</p>
+      <blockquote><p>The river is patient. It does not need to be strong, only to keep going.</p></blockquote>
+      <p>Glaciers carve valleys differently. A glacier fills the whole valley and scrapes its sides, leaving a broad U shape that a later river may then cut into again.</p>
+      <h3>Quick comparison</h3>
+      <table>
+        <thead><tr><th>Feature</th><th>River valley</th><th>Glacial valley</th></tr></thead>
+        <tbody>
+          <tr><td>Cross-section</td><td>V shape</td><td>U shape</td></tr>
+          <tr><td>Main force</td><td>Flowing water</td><td>Moving ice</td></tr>
+        </tbody>
+      </table>
+      <h2>Measuring the work</h2>
+      <p>Researchers estimate erosion by measuring how much sediment passes a point each year. A simple model looks like this:</p>
+      <pre><code>sediment_per_year = flow_rate * concentration * seconds_per_year</code></pre>
+      <p>The function <code>estimate_load()</code> in many field tools wraps that calculation. Press <kbd>Enter</kbd> to run it and read the <samp>Result</samp> line.</p>
+      <ul>
+        <li>Measure the flow at the same spot each time.</li>
+        <li>Take samples after storms as well as on calm days.</li>
+        <li>Record the water temperature and the date.</li>
+      </ul>
+      <p dir="rtl" lang="he">נהר זורם בעמק</p>
+      <p>Rivers matter to people too 🌍: farms, cities and wildlife all depend on the soil that valleys collect.</p>
+    </article>
+    <section aria-labelledby="comments">
+      <h2 id="comments">Comments</h2>
+      <p>Share what you have seen on your own walks.</p>
+      <div class="comment-box" contenteditable="true">Write your comment here</div>
+      <form>
+        <label for="name">Name</label> <input id="name" value="Sam">
+        <label for="msg">Message</label> <textarea id="msg">Great article about valleys</textarea>
+        <select id="topic"><option>Rivers</option><option>Glaciers</option></select>
+        <button type="button">Post comment</button>
+      </form>
+    </section>
+  </main>
+  <aside aria-label="Related">
+    <h2>Related reading</h2>
+    <ul><li><a href="#">Why deltas form fans</a></li><li><a href="#">Reading a contour map</a></li></ul>
+    <div aria-hidden="true">Advertisement placeholder text</div>
+  </aside>
+</div>
+<footer><p>© The Field Notebook. Written for this test page.</p></footer>
+<script>window.__pageScriptRan = true;</script>
+</body>
+</html>

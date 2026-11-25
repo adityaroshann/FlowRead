@@ -1,0 +1,65 @@
+.options {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+.options h2 {
+  font-size: 19px;
+  margin-bottom: 4px;
+}
+.options section {
+  margin-top: 28px;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px 24px;
+}
+.select-field {
+  display: grid;
+  gap: 4px;
+}
+.select-field label {
+  font-weight: 700;
+}
+.select-field select,
+.site-add input {
+  font: inherit;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+}
+.site-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.site-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.site-add {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.site-add input {
+  flex: 1;
+  min-width: 200px;
+}
+.preview {
+  border-radius: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+}

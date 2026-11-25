@@ -1,0 +1,18 @@
+body {
+  width: 360px;
+}
+.popup {
+  padding: 14px;
+}
+.popup .push {
+  margin-left: auto;
+}
+.popup-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.small {
+  font-size: 13px;
+  margin: -6px 0 0;
+}

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fake FlowRead app (bridge test)</title></head>
+<body>
+<h1>Fake app</h1>
+<script>
+  // Stands in for the web app's side of the bridge protocol.
+  window.__msgs = [];
+  window.addEventListener('message', (e) => {
+    if (e.source !== window || !e.data || e.data.source !== 'flowread-ext') return;
+    window.__msgs.push(e.data);
+  });
+  window.postMessage({ source: 'flowread-app', type: 'hello' }, location.origin);
+</script>
+</body>
+</html>

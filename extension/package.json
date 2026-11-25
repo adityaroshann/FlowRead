@@ -1,0 +1,39 @@
+{
+  "name": "flowread-extension",
+  "description": "Read any web page in your FlowRead reading profile.",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox --mv3",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox --mv3",
+    "build:e2e": "wxt build --mode e2e",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox --mv3",
+    "compile": "tsc --noEmit",
+    "icons": "node scripts/make-icons.mjs",
+    "fonts": "node scripts/copy-fonts.mjs",
+    "test": "vitest run",
+    "test:e2e": "npm run build:e2e && playwright test",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "dompurify": "^3.5.0",
+    "lucide-react": "^1.7.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@wxt-dev/module-react": "^1.2.2",
+    "jsdom": "^27.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0",
+    "wxt": "^0.21.5"
+  }
+}
