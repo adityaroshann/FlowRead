@@ -167,7 +167,7 @@ export default function NewConversion() {
                 onClick: open,
               })}
             >
-              <input {...getInputProps({ id: 'fa-file-input', 'aria-describedby': 'fa-file-hint' })} />
+              <input {...getInputProps({ id: 'fa-file-input', 'aria-label': 'Choose a PDF or DOCX file', 'aria-describedby': 'fa-file-hint' })} />
               <Upload className="fa-drop__icon" size={32} aria-hidden="true" />
               <p className="fa-drop__title" aria-hidden="true">
                 {isDragActive ? 'Drop the file to add it' : 'Drag a file here'}

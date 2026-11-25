@@ -197,7 +197,7 @@
   background: var(--fra-bg);
 }
 .fra-radio-card.is-checked { border: 2px solid var(--fra-accent); background: var(--fra-surface); padding: calc(0.75rem - 1px) calc(0.9rem - 1px); }
-.fra-radio-card input { width: 1.4em; height: 1.4em; margin: 0.15em 0 0; accent-color: var(--fra-accent); }
+.fra-radio-card input { position: relative; z-index: 1; width: 1.4em; height: 1.4em; margin: 0.15em 0 0; accent-color: var(--fra-accent); }
 .fra-radio-card label { display: grid; gap: 0.2rem; cursor: pointer; }
 /* Make the whole card clickable */
 .fra-radio-card label::after { content: ''; position: absolute; inset: 0; }

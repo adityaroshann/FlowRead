@@ -75,18 +75,15 @@
   border-radius: 4px;
 }
 
-.fa-staff h1,
-.fa-staff h2,
-.fa-staff h3,
-.fa-staff h4 {
+.fa-staff :is(h1, h2, h3, h4):not(.fra-doc *) {
   font-family: var(--font-system);
   line-height: 1.25;
   color: var(--fa-text);
 }
 
-.fa-staff p { max-width: 70ch; }
+.fa-staff p:not(.fra-doc *) { max-width: 70ch; }
 
-.fa-staff a { color: var(--fa-accent); text-underline-offset: 2px; }
+.fa-staff a:not(.fra-doc *) { color: var(--fa-accent); text-underline-offset: 2px; }
 
 .fa-visually-hidden {
   position: absolute !important;
