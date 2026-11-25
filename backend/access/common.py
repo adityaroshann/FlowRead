@@ -240,6 +240,9 @@ def build_doc(title: str, raw_blocks: list[dict], source_file: str, lang: str = 
     Trailing page markers move into the next section so a section never ends
     with a dangling marker for the page on which the next section starts.
     """
+    from .readability import readable_blocks, structure_hint  # local import: readability imports common
+
+    raw_blocks = readable_blocks(raw_blocks)
     heading_levels = [b["level"] for b in raw_blocks if b["type"] == "heading"]
     top = min(heading_levels) if heading_levels else 2
 
@@ -282,7 +285,7 @@ def build_doc(title: str, raw_blocks: list[dict], source_file: str, lang: str = 
             {"id": f"s{si}", "heading": s["heading"], "level": s["level"], "summary": None, "blocks": blocks}
         )
 
-    return {
+    doc = {
         "id": new_doc_id(),
         "title": title,
         "lang": lang or "en",
@@ -291,6 +294,10 @@ def build_doc(title: str, raw_blocks: list[dict], source_file: str, lang: str = 
         "sections": final,
         "report": {"score": 100, "issues": []},
     }
+    hint = structure_hint(final)
+    if hint:
+        doc["structureHint"] = hint
+    return doc
 
 
 def iter_blocks(doc: dict):

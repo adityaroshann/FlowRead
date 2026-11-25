@@ -576,3 +576,165 @@ async def enrich_blocks(
 
     await asyncio.gather(*(do_image(b) for b in images), *(do_math(b) for b in maths))
     return stats
+
+
+# ---------------------------------------------------------------------------
+# Study aids: flashcards and suggested headings
+# ---------------------------------------------------------------------------
+# Both use the capable model (VISION_MODEL): a wrong flashcard teaches the
+# wrong thing, and headings must describe the text faithfully. They run only
+# when a student asks, once per document.
+
+FLASHCARD_TEXT_CAP = 40_000  # characters of document text sent to the model
+FLASHCARD_MIN, FLASHCARD_MAX = 6, 15
+
+FLASHCARD_SYSTEM = """You make study flashcards from one document so a student can check what they remember.
+
+Use only facts stated in the document. Never add outside knowledge, and never guess.
+Cover the most important ideas across the whole document, not just the start: key terms, core concepts, causes and effects, processes and their steps, and numbers that matter.
+Write for a student who may have dyslexia or ADHD: short, plain sentences.
+- front: one clear question or prompt, under 20 words. No yes/no questions.
+- back: the answer in one or two short sentences, under 40 words, in the document's own terms.
+- kind: "term" (what a word means), "concept" (why or how something works), or "cloze" (a key sentence with one important word or phrase replaced by "____" on the front; the back is the missing words).
+- sectionId: the id of the section the answer comes from, copied exactly.
+Make between 6 and 15 cards, fewer for a short document. Don't repeat the same fact."""
+
+FLASHCARD_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "cards": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "front": {"type": "string"},
+                    "back": {"type": "string"},
+                    "kind": {"type": "string", "enum": ["term", "concept", "cloze"]},
+                    "sectionId": {"type": "string"},
+                },
+                "required": ["front", "back", "kind", "sectionId"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["cards"],
+    "additionalProperties": False,
+}
+
+
+def _sample_sections(sections: list[dict], cap: int) -> list[dict]:
+    """Keep every section, trimming each in proportion so the total fits the cap."""
+    total = sum(len(s.get("text") or "") for s in sections) or 1
+    out = []
+    for s in sections:
+        text = (s.get("text") or "").strip()
+        share = max(400, int(cap * len(text) / total))
+        out.append({**s, "text": text[:share]})
+    return out
+
+
+async def make_flashcards(title: str, sections: list[dict]) -> list[dict]:
+    """sections: [{id, heading, text}] -> validated cards [{front, back, kind, sectionId}]."""
+    if not has_api_key():
+        raise AIUnavailable()
+    ids = {str(s.get("id")) for s in sections if s.get("id")}
+    attr = lambda v: _s(v, 200).replace('"', "'")  # keep attribute values well-formed
+    parts = [f"<document title=\"{attr(title or 'Untitled')}\">"]
+    for s in _sample_sections(sections, FLASHCARD_TEXT_CAP):
+        if not s["text"]:
+            continue
+        parts.append(f"<section id=\"{s.get('id')}\" heading=\"{attr(s.get('heading'))}\">\n{s['text']}\n</section>")
+    parts.append("</document>")
+    text = await _call(
+        VISION_MODEL, FLASHCARD_SYSTEM, "\n".join(parts), max_tokens=8000,
+        effort="medium", schema=FLASHCARD_SCHEMA, fallback=True,
+    )
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise AIError("Flashcards were not valid JSON.") from e
+    cards, seen = [], set()
+    for c in data.get("cards") or []:
+        if not isinstance(c, dict):
+            continue
+        front = _s(c.get("front"), 300)
+        back = _s(c.get("back"), 600)
+        sid = str(c.get("sectionId") or "")
+        kind = c.get("kind") if c.get("kind") in ("term", "concept", "cloze") else "concept"
+        key = front.lower()
+        if not front or not back or key in seen:
+            continue
+        seen.add(key)
+        cards.append({"front": front, "back": back, "kind": kind, "sectionId": sid if sid in ids else None})
+        if len(cards) >= FLASHCARD_MAX:
+            break
+    if not cards:
+        raise AIError("No flashcards could be made from this document.")
+    return cards
+
+
+HEADINGS_SYSTEM = """You help make a long, dense document easier to read by suggesting where short headings would help.
+
+You get numbered paragraphs. Suggest a heading before a paragraph where a new topic starts.
+- Headings name the topic of the text that follows, in 2 to 7 plain words, using the document's own terms. No numbering, no punctuation at the end.
+- Use only the ids given, copied exactly. A heading goes before the paragraph with that id.
+- Aim for one heading every 3 to 8 paragraphs. Don't put one before the first paragraph if the text already has a heading there.
+- Never rewrite, summarise or comment on the text itself."""
+
+HEADINGS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "headings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"beforeBlockId": {"type": "string"}, "text": {"type": "string"}},
+                "required": ["beforeBlockId", "text"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["headings"],
+    "additionalProperties": False,
+}
+
+
+async def suggest_headings(paragraphs: list[dict]) -> list[dict]:
+    """paragraphs: [{id, text}] in reading order -> [{beforeBlockId, text}] (validated, in order).
+
+    Only headings are returned; the document text is never sent back, so it
+    cannot be changed by this step.
+    """
+    if not has_api_key():
+        raise AIUnavailable()
+    order = {str(p["id"]): i for i, p in enumerate(paragraphs) if p.get("id")}
+    body, used = [], 0
+    for p in paragraphs:
+        t = (p.get("text") or "").strip()
+        if not t:
+            continue
+        t = t[:1200]
+        if used + len(t) > FLASHCARD_TEXT_CAP:
+            break
+        used += len(t)
+        body.append(f"<p id=\"{p['id']}\">{t}</p>")
+    text = await _call(
+        VISION_MODEL, HEADINGS_SYSTEM, "\n".join(body), max_tokens=4000,
+        effort="low", schema=HEADINGS_SCHEMA, fallback=True,
+    )
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise AIError("Heading suggestions were not valid JSON.") from e
+    out, seen = [], set()
+    for h in data.get("headings") or []:
+        if not isinstance(h, dict):
+            continue
+        bid = str(h.get("beforeBlockId") or "")
+        label = _s(h.get("text"), 80).rstrip(".:;,")
+        if bid not in order or bid in seen or not label or len(label.split()) > 10:
+            continue
+        seen.add(bid)
+        out.append({"beforeBlockId": bid, "text": label})
+    out.sort(key=lambda h: order[h["beforeBlockId"]])
+    return out

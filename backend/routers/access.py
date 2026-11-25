@@ -235,3 +235,59 @@ async def describe_image(req: DescribeRequest):
 @router.post("/check")
 async def check(doc: dict):
     return check_doc(doc)
+
+
+# ---------------------------------------------------------------------------
+# Study aids
+# ---------------------------------------------------------------------------
+
+class FlashSection(BaseModel):
+    id: str
+    heading: str = ""
+    text: str = ""
+
+
+class FlashcardsRequest(BaseModel):
+    title: str = ""
+    sections: list[FlashSection]
+
+
+MAX_STUDY_SECTIONS = 400
+MAX_STUDY_CHARS = 2_000_000
+
+
+@router.post("/flashcards")
+async def flashcards(req: FlashcardsRequest):
+    """Study flashcards from the document text: {cards: [{front, back, kind, sectionId}]}."""
+    _require_ai()
+    if not req.sections or not any(s.text.strip() for s in req.sections):
+        raise HTTPException(400, "The document has no text to make flashcards from.")
+    if len(req.sections) > MAX_STUDY_SECTIONS or sum(len(s.text) for s in req.sections) > MAX_STUDY_CHARS:
+        raise HTTPException(413, "The document is too large for flashcards.")
+    cards = await _run_ai(ai.make_flashcards(req.title, [s.model_dump() for s in req.sections]))
+    return {"cards": cards}
+
+
+class HeadingParagraph(BaseModel):
+    id: str
+    text: str = ""
+
+
+class StructureRequest(BaseModel):
+    paragraphs: list[HeadingParagraph]
+
+
+@router.post("/structure")
+async def structure(req: StructureRequest):
+    """Suggested headings for a dense document: {headings: [{beforeBlockId, text}]}.
+
+    Only heading suggestions come back; the reader inserts them as new heading
+    blocks, so the document's own text is never changed.
+    """
+    _require_ai()
+    paras = [p for p in req.paragraphs if p.text.strip()]
+    if len(paras) < 3:
+        raise HTTPException(400, "Not enough text to suggest headings.")
+    if len(paras) > 3000 or sum(len(p.text) for p in paras) > MAX_STUDY_CHARS:
+        raise HTTPException(413, "The document is too large.")
+    return {"headings": await _run_ai(ai.suggest_headings([p.model_dump() for p in paras]))}

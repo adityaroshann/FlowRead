@@ -58,6 +58,14 @@ async def finish_document(
     progress("structure", "Building sections…", 88)
     doc = await asyncio.to_thread(build_doc, title, raw, source_file, lang or DEFAULT_LANG)
     doc["source"] = source
+    # What the AI did during conversion, for the reader's "What AI did" line.
+    doc["ai"] = {
+        "available": ai.has_api_key(),
+        "imagesDescribed": stats.get("described", 0),
+        "imagesNeedingAlt": stats.get("failed", 0) + (stats.get("images", 0) if not ai.has_api_key() else 0),
+        "pagesRead": stats.get("pagesOcr", 0),
+        "mathSpoken": stats.get("mathSpoken", 0) + stats.get("mathVision", 0),
+    }
 
     progress("check", "Checking accessibility…", 95)
     doc["report"] = check_doc(doc)

@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import anthropic
+from access.ai import FAST_MODEL
 
 router = APIRouter()
 
@@ -93,7 +94,7 @@ async def summarize(req: SummarizeRequest):
 
     def generate():
         with client.messages.stream(
-            model="claude-haiku-4-5-20251001",
+            model=FAST_MODEL,
             max_tokens=max_tokens,
             system=system_prompt,
             messages=[{"role": "user", "content": f"Summarize this document:\n\n{text_sample}"}],
@@ -113,12 +114,13 @@ async def summarize(req: SummarizeRequest):
 async def simplify(req: SimplifyRequest):
     client = _get_client()
     message = client.messages.create(
-        model="claude-haiku-4-5-20251001",
+        model=FAST_MODEL,
         max_tokens=512,
         messages=[{
             "role": "user",
             "content": f"{SIMPLIFY_PROMPT}\n\nParagraph:\n{req.paragraph}"
         }],
     )
-    simplified = message.content[0].text
+    # Current models can return thinking blocks before the text; take the text blocks only.
+    simplified = "".join(b.text for b in message.content if b.type == "text").strip()
     return {"simplified": simplified}

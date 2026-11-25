@@ -58,6 +58,22 @@ class FakeMessages:
             text = json.dumps({"items": [
                 {"index": i, "latex": f"\\alpha_{i}", "spoken": f"vision reading {i}"} for i in range(1, n + 1)
             ] + [{"index": 99, "latex": "bad", "spoken": "out of range"}]})
+        elif "study flashcards" in system:
+            text = json.dumps({"cards": [
+                {"front": "What do chloroplasts do?", "back": "They carry out photosynthesis.", "kind": "concept", "sectionId": "s1"},
+                {"front": "What do chloroplasts do?", "back": "Duplicate front is dropped.", "kind": "concept", "sectionId": "s1"},
+                {"front": "Plants store energy as ____.", "back": "glucose", "kind": "cloze", "sectionId": "s-unknown"},
+                {"front": "", "back": "No front, dropped.", "kind": "term", "sectionId": "s1"},
+                {"front": "Define stroma", "back": "The fluid inside a chloroplast.", "kind": "weird", "sectionId": "s2"},
+            ]})
+        elif "suggesting where short headings" in system:
+            text = json.dumps({"headings": [
+                {"beforeBlockId": "b9", "text": "Later topic."},
+                {"beforeBlockId": "b4", "text": "The Calvin cycle"},
+                {"beforeBlockId": "nope", "text": "Unknown id"},
+                {"beforeBlockId": "b4", "text": "Duplicate"},
+                {"beforeBlockId": "b6", "text": "one two three four five six seven eight nine ten eleven"},
+            ]})
         elif "define a word" in system:
             text = "A short plain definition."
         elif "alt text" in system:
