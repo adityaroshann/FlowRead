@@ -1,10 +1,10 @@
 /* Styles inside the shadow root. Colours come from the active theme
    (THEME_COLORS in @flowread/core) through custom properties on .fr-root. */
 .fr-root {
-  --bg: #faf7f0;
-  --ink: #1f1b16;
-  --muted: #5c554b;
-  --accent: #0f6b6b;
+  --bg: #FAFAF8;
+  --ink: #1A1D1A;
+  --muted: #5C6158;
+  --accent: #457552;
   --mark: #ffe58a;
   --line: color-mix(in srgb, var(--ink) 14%, transparent);
   --soft: color-mix(in srgb, var(--ink) 5%, var(--bg));

@@ -2,8 +2,7 @@
    reading theme because <html data-ui-theme> mirrors settings.theme. */
 
 .rd {
-  /* Two rows: title row (56px) + reading bar (52px) */
-  --top-h: 108px;
+  --top-h: 56px;
   min-height: 100vh;
   background: var(--fra-bg);
   color: var(--fra-text);
@@ -25,13 +24,12 @@
   z-index: 40;
   height: var(--top-h);
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
   align-items: center;
   gap: var(--s-2);
   padding: 0 var(--s-3);
-  background: var(--paper);
-  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--fra-bg, var(--paper)) 82%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
 }
 [data-ui-theme='high-contrast'] .rd-top {
   border-bottom-color: var(--line);
@@ -1082,38 +1080,56 @@
   pointer-events: none;
   z-index: 30;
 }
-.fra-focusline-dim {
+/* Above and below the band: the page softly blurred and dimmed. */
+.fra-focusline-veil {
   position: absolute;
   left: 0;
   right: 0;
-  background: var(--fra-bg);
-  opacity: 0.62;
+  background: color-mix(in srgb, var(--fra-bg) 52%, transparent);
+  -webkit-backdrop-filter: blur(2.5px) saturate(85%);
+  backdrop-filter: blur(2.5px) saturate(85%);
+  transition: top 110ms ease-out, height 110ms ease-out;
 }
+.fra-focusline.is-strong .fra-focusline-veil {
+  background: color-mix(in srgb, var(--fra-bg) 68%, transparent);
+  -webkit-backdrop-filter: blur(5px) saturate(75%);
+  backdrop-filter: blur(5px) saturate(75%);
+}
+.fra-focusline.is-off .fra-focusline-veil {
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fra-focusline-veil {
+    background: color-mix(in srgb, var(--fra-bg) 78%, transparent);
+  }
+}
+/* The band itself stays sharp and looks lifted: a soft accent glow and shadow. */
 .fra-focusline-band {
   position: absolute;
   left: 0;
   right: 0;
-  border-top: 1.5px solid var(--fra-accent);
-  border-bottom: 1.5px solid var(--fra-accent);
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--fra-accent) 70%, transparent),
+    0 12px 30px -10px color-mix(in srgb, var(--fra-accent) 45%, transparent),
+    0 -12px 30px -10px color-mix(in srgb, var(--fra-accent) 30%, transparent);
+  transition: top 110ms ease-out, height 120ms ease-out;
+}
+.fra-focusline.is-off .fra-focusline-band {
   background: color-mix(in srgb, var(--fra-accent) 8%, transparent);
-  mix-blend-mode: multiply;
-  transition: top 90ms ease-out, height 120ms ease-out;
 }
-[data-fra-theme='dark'] .fra-focusline-band,
 [data-fra-theme='high-contrast'] .fra-focusline-band {
-  mix-blend-mode: normal;
-  background: color-mix(in srgb, var(--fra-accent) 14%, transparent);
-}
-.fra-focusline-dim {
-  transition: top 90ms ease-out, height 90ms ease-out;
+  box-shadow: 0 0 0 2px var(--fra-accent);
 }
 .fra-focusline.no-motion .fra-focusline-band,
-.fra-focusline.no-motion .fra-focusline-dim {
+.fra-focusline.no-motion .fra-focusline-veil {
   transition: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .fra-focusline-band,
-  .fra-focusline-dim {
+  .fra-focusline-veil {
     transition: none;
   }
 }
@@ -1130,128 +1146,6 @@
   }
 }
 
-
-/* ---------- Reading bar: the essentials, always in view ---------- */
-
-.rd-top > :not(.rd-barrow) {
-  height: 56px;
-}
-.rd-top-title {
-  line-height: 56px;
-}
-.rd-barrow {
-  flex: 1 0 100%;
-  /* Let the bar scroll inside its row instead of widening the page, and keep
-     visually hidden labels (position: absolute) inside that scroller. */
-  position: relative;
-  min-width: 0;
-  max-width: calc(100% + 2 * var(--s-3));
-  height: 52px;
-  margin: 0 calc(-1 * var(--s-3));
-  padding: 0 var(--s-3);
-  border-top: 1px solid var(--rule);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-}
-.rbar {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  min-width: max-content;
-}
-.rbar .btn {
-  min-height: 38px;
-}
-.rbar-spacer {
-  flex: 1;
-  min-width: var(--s-2);
-}
-.rbar-group {
-  display: inline-flex;
-  gap: var(--s-1);
-}
-.rbar-select {
-  min-height: 38px;
-  padding: 0 var(--s-6) 0 var(--s-3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
-  background-color: var(--raised);
-  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  appearance: none;
-  color: var(--ink);
-  font: 700 var(--t-sm) var(--font-ui);
-  cursor: pointer;
-}
-.rbar-toggle.is-on {
-  background: var(--accent-tint);
-  border-color: var(--accent);
-  color: var(--ink);
-}
-/* Segmented Off / Light / Medium / Strong (native radios underneath) */
-.rbar-seg {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin: 0;
-  padding: 3px;
-  min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
-  background: var(--raised);
-}
-.rbar-seg-label {
-  padding: 0 var(--s-2) 0 var(--s-1);
-  font-size: var(--t-xs);
-  color: var(--muted);
-  font-weight: 400;
-}
-.rbar-seg-label b {
-  color: var(--ink);
-}
-.rbar-seg-opt {
-  position: relative;
-}
-.rbar-seg-opt input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.rbar-seg-opt span {
-  display: block;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: var(--t-xs);
-  font-weight: 700;
-  color: var(--ink);
-}
-.rbar-seg-opt:hover span {
-  background: var(--surface);
-}
-.rbar-seg-opt input:checked + span {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-.rbar-seg-opt input:focus-visible + span {
-  outline: var(--focus-w) solid var(--focus);
-  outline-offset: 2px;
-}
-@media (max-width: 47.99em) {
-  .rbar-text {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-}
 
 /* Reading timer chip */
 .rtimer {
@@ -1589,4 +1483,214 @@
   .fc-card {
     transition: none;
   }
+}
+
+
+/* ---------- Floating toolbar (the original FlowRead pill, refined) ---------- */
+
+.ftb {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100vw - 24px);
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 2px 24px rgba(26, 29, 26, 0.08), 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent);
+  overflow-x: auto;
+  scrollbar-width: none;
+  font-family: var(--font-ui);
+}
+.ftb::-webkit-scrollbar {
+  display: none;
+}
+[data-ui-theme='dark'] .ftb {
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+[data-ui-theme='high-contrast'] .ftb {
+  background: #000;
+  box-shadow: 0 0 0 2px #fff;
+}
+.ftb-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: 600 13px/1 var(--font-ui);
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.ftb-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+.ftb-btn.is-on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.ftb-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ftb-btn:focus-visible,
+.ftb-select:focus-visible {
+  outline: var(--focus-w) solid var(--focus);
+  outline-offset: 2px;
+}
+.ftb-bold-glyph {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.ftb-bold-glyph b {
+  font-weight: 800;
+}
+.ftb-bold-level {
+  min-width: 3.2em;
+  text-align: left;
+}
+.ftb-div {
+  flex: none;
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.ftb-profile {
+  flex: none;
+}
+.ftb-select {
+  height: 40px;
+  padding: 0 28px 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background-color: transparent;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  appearance: none;
+  color: var(--ink);
+  font: 700 13px/1 var(--font-ui);
+  cursor: pointer;
+}
+.ftb-select:hover {
+  background-color: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.ftb .rtimer {
+  min-height: 34px;
+  background: transparent;
+  padding-left: 8px;
+}
+/* Room so the toolbar never covers the last lines. */
+.rd-main {
+  padding-bottom: 140px;
+}
+@media (max-width: 40em) {
+  .ftb {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    max-width: none;
+    border-radius: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    justify-content: flex-start;
+  }
+  .ftb-bold-level {
+    display: none;
+  }
+}
+
+/* Distraction-free: just the text */
+.rd.is-df .rd-top {
+  visibility: hidden;
+}
+.rd-df-exit {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 46;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: 600 12px/1 var(--font-ui);
+  opacity: 0.35;
+  cursor: pointer;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.rd-df-exit:hover,
+.rd-df-exit:focus-visible {
+  opacity: 1;
+  background: var(--surface);
+}
+
+/* Page markers: kept for navigation and screen readers, hidden visually unless asked for */
+.rd-hide-pages .fra-page {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  margin: 0;
+}
+
+/* Quieter side panel: text tabs, no boxes */
+.rd-rail {
+  border-right-color: transparent;
+  background: transparent;
+}
+.rail-tablist {
+  background: transparent;
+  padding: 0;
+  gap: var(--s-4);
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+}
+.rail-tablist .tab {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: var(--s-2) 0;
+  min-height: 40px;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.rail-tablist .tab[data-selected] {
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+/* AI answers in the reader's own style (setting: aiReadingStyle) */
+.ai-text.ai-reading {
+  font-family: var(--fra-font);
+  letter-spacing: var(--fra-ls, 0);
+  word-spacing: var(--fra-ws, 0);
+  line-height: var(--fra-lh, 1.6);
+  font-size: calc(1rem * min(var(--fra-scale, 1), 1.4));
 }

@@ -30,12 +30,15 @@ import {
   Layers,
   Undo2,
   WandSparkles,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import DocRenderer from '../shared/DocRenderer.jsx';
 import { getDoc, getSource, saveDoc } from '../shared/storage.js';
 import { SAMPLE_DOC_ID, seedSampleDoc } from '../shared/sampleDoc.js';
 import { plainLanguage, suggestHeadings, summarizeSection } from '../shared/api.js';
 import AiBadge from '../shared/AiBadge.jsx';
+import AiText from '../shared/AiText.jsx';
 import { PROFILES, PROFILE_ORDER, THEMES, settingsToData, settingsToStyle } from '@flowread/core/profiles.js';
 import { readingMinutes, sectionLabel, sectionText, sectionWordCount } from '@flowread/core/docModel.js';
 import { chooseProfile, getPrefs, loadProgress, saveProgress, updateSettings, usePrefs } from './readerPrefs.js';
@@ -73,10 +76,12 @@ function useMedia(query) {
 }
 
 function readRail() {
+  const roomy = typeof window !== 'undefined' && window.innerWidth >= 1280;
   try {
-    return window.localStorage.getItem(RAIL_KEY) !== '0';
+    const v = window.localStorage.getItem(RAIL_KEY);
+    return v == null ? roomy : v === '1';
   } catch {
-    return true;
+    return roomy;
   }
 }
 
@@ -168,7 +173,7 @@ function pageForSection(sections, i) {
 
 // ---------- pieces ----------
 
-function SummaryBox({ section, state, onFetch, index }) {
+function SummaryBox({ section, state, onFetch, index, settings }) {
   const text = section.summary || state?.text;
   return (
     <div className="rd-summary" aria-live="polite">
@@ -176,7 +181,7 @@ function SummaryBox({ section, state, onFetch, index }) {
       {text ? (
         <>
           <p className="rd-summary-text">
-            {text} <AiBadge what="This summary" />
+            <AiText text={text} settings={settings} /> <AiBadge what="This summary" />
           </p>
         </>
       ) : state?.status === 'loading' ? (
@@ -260,6 +265,7 @@ function ReaderView({ initialDoc }) {
   const [paletteKey, setPaletteKey] = useState(0);
   const [download, setDownload] = useState({ open: false, format: 'pdf' });
   const [moreOpen, setMoreOpen] = useState(false);
+  const [distractionFree, setDistractionFree] = useState(false);
   const [cardsOpen, setCardsOpen] = useState(false);
   const [docSummary, setDocSummary] = useState({ status: 'idle' });
   const [headingsState, setHeadingsState] = useState({ status: 'idle' });
@@ -548,14 +554,23 @@ function ReaderView({ initialDoc }) {
       } else if (mod && e.shiftKey && e.key.toLowerCase() === 'e') {
         e.preventDefault();
         if (!selRef.current?.open()) setAnnouncement('Select some text in the document first.');
-      } else if (!mod && !e.altKey && (e.key === 'f' || e.key === 'F')) {
+      } else if (!mod && !e.altKey && /^[fFdD]$/.test(e.key)) {
         const t = e.target;
         const typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.closest?.('[role="dialog"]'));
         if (typing) return;
         e.preventDefault();
+        if (e.key === 'd' || e.key === 'D') {
+          setDistractionFree((v) => {
+            setAnnouncement(v ? 'Distraction-free off.' : 'Distraction-free on. Press D or Escape to exit.');
+            return !v;
+          });
+          return;
+        }
         const on = !getPrefs().settings.focusLine;
         updateSettings({ focusLine: on });
         setAnnouncement(`Focus line ${on ? 'on' : 'off'}.`);
+      } else if (e.key === 'Escape') {
+        setDistractionFree(false);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -702,7 +717,7 @@ function ReaderView({ initialDoc }) {
 
   // ---- render ----
   const renderBeforeBlocks = (sec, i) =>
-    settings.summaries ? <SummaryBox section={sec} index={i} state={summaries[sec.id]} onFetch={fetchSummary} /> : null;
+    settings.summaries ? <SummaryBox section={sec} index={i} state={summaries[sec.id]} onFetch={fetchSummary} settings={settings} /> : null;
 
   const focusBar = focusMode && (
     <div className="rd-session">
@@ -718,13 +733,8 @@ function ReaderView({ initialDoc }) {
   const meta = (
     <div className="rd-meta">
       <p className="rd-meta-line">
-        {n} {n === 1 ? 'section' : 'sections'}, about {totalMinutes} min
-        {doc.sourceFile && !minimal ? (
-          <>
-            {' '}
-            <span className="rd-meta-src">from {doc.sourceFile}</span>
-          </>
-        ) : null}
+        {totalMinutes} min read
+        {n > 1 ? ` · ${n} sections` : ''}
       </p>
       {resume != null && (
         <div className="rd-resume" role="region" aria-label="Resume reading">
@@ -787,7 +797,8 @@ function ReaderView({ initialDoc }) {
     pct,
     minutesLeft,
     onGo: goTo,
-    pages,
+    // "Go to page" only when the reader has asked to see original page numbers.
+    pages: settings.showPageNumbers ? pages : [],
     onGoPage: goToPage,
     kind: doc.source?.kind,
     summary: {
@@ -799,6 +810,7 @@ function ReaderView({ initialDoc }) {
       docSummary,
       onDocSummary: fetchDocSummary,
       onFlashcards: () => setCardsOpen(true),
+      settings,
     },
   };
 
@@ -807,7 +819,7 @@ function ReaderView({ initialDoc }) {
 
   return (
     <div
-      className={`rd fra-theme${minimal ? ' rd-minimal' : ''}${wide && railOpen ? ' has-rail' : ''}${showOriginal ? ' has-orig' : ''}`}
+      className={`rd fra-theme${minimal ? ' rd-minimal' : ''}${wide && railOpen && !distractionFree ? ' has-rail' : ''}${showOriginal ? ' has-orig' : ''}${distractionFree ? ' is-df' : ''}${settings.showPageNumbers ? '' : ' rd-hide-pages'}`}
       style={settingsToStyle(settings)}
       {...settingsToData({ ...settings, noMotion })}
     >
@@ -833,22 +845,19 @@ function ReaderView({ initialDoc }) {
         <span className="rd-top-title" aria-hidden="true">
           {doc.title}
         </span>
-
-        <div className="rd-barrow">
-          <ReadingBar
-            prefs={prefs}
-            speech={speech}
-            showSpeech={showSpeech}
-            onReadAloud={readCurrent}
-            onMore={() => setMoreOpen(true)}
-            onDownload={() => setDownload({ open: true, format: 'pdf' })}
-            onAnnounce={setAnnouncement}
-          />
-        </div>
+        <button
+          type="button"
+          className="btn btn-icon btn-quiet"
+          onClick={() => updateSettings({ theme: settings.theme === 'dark' || settings.theme === 'high-contrast' ? 'light' : 'dark' })}
+          aria-label={settings.theme === 'dark' || settings.theme === 'high-contrast' ? 'Light theme' : 'Dark theme'}
+          title={settings.theme === 'dark' || settings.theme === 'high-contrast' ? 'Light theme' : 'Dark theme'}
+        >
+          {settings.theme === 'dark' || settings.theme === 'high-contrast' ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+        </button>
       </header>
 
       <div className="rd-body">
-        {wide && railOpen && (
+        {wide && railOpen && !distractionFree && (
           <aside className="rd-rail" id="rd-rail" aria-label="Contents and summary">
             <SideRail {...railProps} />
           </aside>
@@ -998,8 +1007,24 @@ function ReaderView({ initialDoc }) {
           </Dialog>
         </Modal>
       </ModalOverlay>
-      <Flashcards isOpen={cardsOpen} onOpenChange={setCardsOpen} doc={doc} onSaveCards={saveCards} />
-      <SelectionPopover ref={selRef} rootRef={mainRef} onSpeak={speakText} />
+      <Flashcards isOpen={cardsOpen} onOpenChange={setCardsOpen} doc={doc} onSaveCards={saveCards} settings={settings} />
+      <ReadingBar
+        prefs={prefs}
+        speech={speech}
+        showSpeech={showSpeech}
+        onReadAloud={readCurrent}
+        onMore={() => setMoreOpen(true)}
+        onDownload={() => setDownload({ open: true, format: 'pdf' })}
+        onSummary={() => openRail('summary')}
+        onAnnounce={setAnnouncement}
+        hidden={distractionFree}
+      />
+      {distractionFree && (
+        <button type="button" className="rd-df-exit" onClick={() => setDistractionFree(false)} aria-keyshortcuts="D Escape">
+          Exit distraction-free <kbd className="kbd">D</kbd>
+        </button>
+      )}
+      <SelectionPopover ref={selRef} rootRef={mainRef} onSpeak={speakText} settings={settings} />
 
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {announcement}
@@ -1009,7 +1034,7 @@ function ReaderView({ initialDoc }) {
         active={settings.focusLine}
         lineHeightPx={Math.round(18 * (settings.textScale || 1) * (settings.lineHeight || 1.6))}
         lines={settings.focusLineSize}
-        dim={settings.focusDim}
+        blur={settings.focusBlur}
         noMotion={noMotion}
         followSelector={speech.highlight ? '.rd-doc .fra-word-current' : undefined}
         followKey={speech.highlight ? `${speech.highlight.blockId}:${speech.highlight.start}` : undefined}

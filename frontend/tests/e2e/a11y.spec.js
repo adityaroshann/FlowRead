@@ -10,7 +10,7 @@ import {
 } from './helpers.js';
 
 const ROUTES = [
-  { path: '/', h1: /Study material/ },
+  { path: '/', h1: /Read faster/ },
   { path: '/library', h1: /Library/ },
   { path: '/read/doc_sample', h1: /BIOL 1001/ },
   { path: '/read/doc_sample/edit', h1: /BIOL 1001/ },
@@ -73,7 +73,7 @@ test.describe('reflow at 320 CSS px (200% zoom on a 640 px window)', () => {
     await page.getByRole('tab', { name: 'Summary' }).click();
     await expectNoSeriousAxe(page, 'mobile sheet summary');
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'More' }).click();
+    await page.getByRole('button', { name: 'More settings' }).click();
     await expect(page.getByRole('dialog', { name: 'More reading settings' })).toBeVisible();
     await expectNoSeriousAxe(page, 'more sheet');
   });

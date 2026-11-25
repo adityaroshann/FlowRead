@@ -125,7 +125,7 @@ test.describe('reader', () => {
     const after = await page.locator('#blk-b2').evaluate((el) => getComputedStyle(el).fontSize);
     expect(parseFloat(after)).toBeGreaterThan(parseFloat(before));
     // The More sheet holds the finer controls.
-    await page.getByRole('button', { name: 'More' }).click();
+    await page.getByRole('button', { name: 'More settings' }).click();
     const slider = page.getByRole('slider', { name: 'Letter spacing' });
     await slider.focus();
     for (let i = 0; i < 4; i += 1) await page.keyboard.press('ArrowRight');
@@ -321,7 +321,7 @@ test.describe('extension bridge', () => {
       }),
     );
     await page.evaluate(() => window.postMessage({ source: 'flowread-ext', type: 'ready', version: '0.1.0' }, '*'));
-    await page.getByRole('button', { name: 'More' }).click();
+    await page.getByRole('button', { name: 'More settings' }).click();
     await expect(page.getByText('Extension connected (0.1.0)')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect.poll(() => sent.some((m) => m.type === 'setSettings')).toBe(true);
@@ -361,12 +361,17 @@ test.describe('reading bar and profiles', () => {
     await usePrefs(page, 'standard');
     await seedSample(page);
     const medium = await boldLen(page);
-    await page.getByRole('radio', { name: 'Strong' }).check({ force: true });
+    // One button cycles Medium -> Strong -> Off -> Light -> Medium.
+    const bold = page.getByRole('button', { name: /^Bold word starts:/ });
+    await expect(bold).toHaveAccessibleName(/Medium/);
+    await bold.click();
+    await expect(bold).toHaveAccessibleName(/Strong/);
     await expect.poll(() => boldLen(page)).toBeGreaterThan(medium);
-    await page.getByRole('radio', { name: 'Light' }).check({ force: true });
-    await expect.poll(() => boldLen(page)).toBeLessThan(medium);
-    await page.getByRole('radio', { name: 'Off' }).check({ force: true });
+    await bold.click();
     await expect(page.locator('#blk-b2 b.fra-bws')).toHaveCount(0);
+    await bold.click();
+    await expect(bold).toHaveAccessibleName(/Light/);
+    await expect.poll(() => boldLen(page)).toBeLessThan(medium);
   });
 
   test('each profile looks different', async ({ page }) => {
@@ -379,6 +384,7 @@ test.describe('reading bar and profiles', () => {
         const cs = getComputedStyle(p);
         return {
           bold: [...document.querySelectorAll('#blk-b2 b.fra-bws')].reduce((n, el) => n + el.textContent.length, 0),
+          font: cs.fontFamily,
           ls: cs.letterSpacing,
           size: cs.fontSize,
           bg: getComputedStyle(document.querySelector('.rd')).backgroundColor,
@@ -388,7 +394,7 @@ test.describe('reading bar and profiles', () => {
       });
     const seen = {};
     for (const id of ['standard', 'dyslexia', 'focus', 'screenreader', 'lowvision']) {
-      await page.selectOption('.rbar-select', id);
+      await page.selectOption('.ftb-select', id);
       seen[id] = await look();
     }
     const keys = Object.values(seen).map((v) => JSON.stringify(v));
@@ -398,6 +404,10 @@ test.describe('reading bar and profiles', () => {
     expect(seen.screenreader.bold).toBe(0);
     expect(seen.focus.bold).toBeGreaterThan(seen.standard.bold);
     expect(seen.dyslexia.bold).toBeLessThan(seen.standard.bold);
+    // Standard reads in Literata (serif); Focus in Lexend.
+    expect(seen.standard.font).toMatch(/Literata/);
+    expect(seen.focus.font).toMatch(/Lexend/);
+    expect(seen.standard.font).not.toBe(seen.focus.font);
   });
 
   test('F toggles the focus line, which follows the pointer', async ({ page }) => {
@@ -461,5 +471,48 @@ test.describe('flashcards', () => {
     const dialog = page.getByRole('dialog', { name: 'Check what you remember' });
     await dialog.getByRole('button', { name: 'Make flashcards' }).click();
     await expect(dialog.getByRole('alert')).toContainText('AI service');
+  });
+});
+
+
+test.describe('focus line look and AI reading style', () => {
+  test('the focus line blurs the rest of the page', async ({ page }) => {
+    await offlineApi(page);
+    await usePrefs(page, 'focus');
+    await seedSample(page);
+    const veil = page.locator('.fra-focusline-veil').first();
+    await expect(veil).toBeAttached();
+    const filter = await veil.evaluate((el) => getComputedStyle(el).backdropFilter || getComputedStyle(el).webkitBackdropFilter);
+    expect(filter).toContain('blur');
+  });
+
+  test('AI answers follow the reading font, and the setting turns it off', async ({ page }) => {
+    await offlineApi(page);
+    await page.route('**/api/access/summary', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ summary: 'Cells are the basic unit of life.' }) }),
+    );
+    await usePrefs(page, 'standard');
+    await seedSample(page);
+    await page.getByRole('tab', { name: 'Summary' }).click();
+    await page.getByRole('button', { name: 'Summarise the document' }).click();
+    const text = page.locator('.rail-sum-text').first();
+    await expect(text).toContainText('basic unit of life');
+    expect(await text.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/Literata/);
+    await expect(text.locator('b.fra-bws').first()).toBeVisible();
+    await page.getByRole('button', { name: 'More settings' }).click();
+    await page.getByRole('switch', { name: /AI answers in my reading style/ }).click({ force: true });
+    await page.keyboard.press('Escape');
+    expect(await text.evaluate((el) => getComputedStyle(el).fontFamily)).not.toMatch(/Literata/);
+  });
+
+  test('D switches distraction-free on and off', async ({ page }) => {
+    await offlineApi(page);
+    await usePrefs(page, 'standard');
+    await seedSample(page);
+    await page.locator('h1').click();
+    await page.keyboard.press('d');
+    await expect(page.getByRole('toolbar', { name: 'Reading controls' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('toolbar', { name: 'Reading controls' })).toBeVisible();
   });
 });

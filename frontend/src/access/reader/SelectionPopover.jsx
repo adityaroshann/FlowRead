@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Popover } from 'react-aria-components';
+import AiText from '../shared/AiText.jsx';
 import { BookA, Copy, LoaderCircle, Sparkles, Volume2, X } from 'lucide-react';
 import { define, plainLanguage } from '../shared/api.js';
 
@@ -40,7 +41,7 @@ function readSelection(root) {
  * Opens next to a mouse or keyboard selection inside `rootRef` without taking
  * focus; Ctrl/Cmd+Shift+E (or the command palette) opens it with focus.
  */
-const SelectionPopover = forwardRef(function SelectionPopover({ rootRef, onSpeak, enabled = true }, ref) {
+const SelectionPopover = forwardRef(function SelectionPopover({ rootRef, onSpeak, enabled = true, settings }, ref) {
   const [sel, setSel] = useState(null);
   const [result, setResult] = useState(null); // { kind, status, text }
   const anchorRef = useRef(null);
@@ -204,7 +205,7 @@ const SelectionPopover = forwardRef(function SelectionPopover({ rootRef, onSpeak
                       <span> · written by AI</span>
                     </p>
                   )}
-                  <p>{result.text}</p>
+                  {result.status === 'done' ? <AiText as="p" text={result.text} settings={settings} portal /> : <p>{result.text}</p>}
                 </div>
               )}
               {result?.kind === 'copy' && <p className="selpop-status">{result.text}</p>}

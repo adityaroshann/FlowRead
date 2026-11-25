@@ -12,7 +12,7 @@ export async function usePrefs(page, profileId = 'standard', patch = {}) {
   await page.addInitScript(
     ({ profileId, settings }) => {
       if (window.top !== window) return;
-      localStorage.setItem('flowread-access:reader-prefs', JSON.stringify({ profileId, settings, reduceMotion: false }));
+      localStorage.setItem('flowread-access:reader-prefs', JSON.stringify({ version: 3, profileId, settings, reduceMotion: false }));
     },
     { profileId, settings: { ...PROFILE_SETTINGS[profileId], ...patch } },
   );

@@ -106,6 +106,8 @@ export default function SettingsPanel({ children }) {
         <Toggle label="Focus sessions" hint="One section at a time, with time left" isSelected={s.focusMode} onChange={set('focusMode')} />
         <Toggle label="Section summaries" hint="A short AI summary before each section" isSelected={s.summaries} onChange={set('summaries')} />
         <Toggle label="Reading timer" hint="25 minutes of reading, then a 5-minute break" isSelected={s.readingTimer} onChange={set('readingTimer')} />
+        <Toggle label="AI answers in my reading style" hint="Summaries, explanations and flashcards use your font, spacing and bold starts" isSelected={s.aiReadingStyle !== false} onChange={set('aiReadingStyle')} />
+        <Toggle label="Original page numbers" hint="Show where each page of the original starts" isSelected={s.showPageNumbers} onChange={set('showPageNumbers')} />
         <Toggle label="Read aloud" hint="Word-by-word highlighting as it reads" isSelected={s.readAloud} onChange={set('readAloud')} />
         <Toggle label="Plain language" hint="Simpler rewrites, next to the original" isSelected={s.plainLanguage} onChange={set('plainLanguage')} />
         <Toggle label="Image descriptions" hint="Show descriptions under pictures" isSelected={s.imageDetails} onChange={set('imageDetails')} />
@@ -123,7 +125,18 @@ export default function SettingsPanel({ children }) {
             </Radio>
           ))}
         </RadioGroup>
-        <Toggle label="Dim the rest of the page" isSelected={s.focusDim} onChange={set('focusDim')} />
+        <RadioGroup className="set-inline" value={s.focusBlur || 'soft'} onChange={set('focusBlur')} orientation="horizontal">
+          <Label className="set-sublabel">Blur around it</Label>
+          {[
+            ['off', 'Off'],
+            ['soft', 'Soft'],
+            ['strong', 'Strong'],
+          ].map(([v, l]) => (
+            <Radio key={v} value={v} className="set-chip">
+              {l}
+            </Radio>
+          ))}
+        </RadioGroup>
       </div>
 
       <div className="set-group set-switches">

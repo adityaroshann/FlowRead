@@ -3,6 +3,7 @@ import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import { Check, Layers, LoaderCircle, Sparkles } from 'lucide-react';
 import { sectionLabel } from '@flowread/core/docModel.js';
 import AiBadge from '../shared/AiBadge.jsx';
+import AiText from '../shared/AiText.jsx';
 
 function Contents({ sections, current, furthest, pct, minutesLeft, onGo, pages, onGoPage, kind }) {
   const [page, setPage] = useState('');
@@ -90,7 +91,7 @@ function AiDidLine({ ai }) {
   );
 }
 
-function SummaryPanel({ doc, section, sectionIndex, sectionSummary, onSectionSummary, docSummary, onDocSummary, onFlashcards }) {
+function SummaryPanel({ doc, section, sectionIndex, sectionSummary, onSectionSummary, docSummary, onDocSummary, onFlashcards, settings }) {
   const cards = doc.flashcards?.cards?.length || 0;
   const secText = section?.summary || (sectionSummary?.status === 'done' ? sectionSummary.text : '');
   return (
@@ -100,7 +101,7 @@ function SummaryPanel({ doc, section, sectionIndex, sectionSummary, onSectionSum
           Whole document {doc.summary && <AiBadge what="This summary" />}
         </h2>
         {doc.summary ? (
-          <p className="rail-sum-text">{doc.summary}</p>
+          <AiText as="p" className="rail-sum-text" text={doc.summary} settings={settings} />
         ) : (
           <button type="button" className="btn btn-sm" onClick={onDocSummary} disabled={docSummary?.status === 'loading'}>
             {docSummary?.status === 'loading' ? <LoaderCircle size={14} className="spin" aria-hidden="true" /> : <Sparkles size={14} aria-hidden="true" />}
@@ -116,7 +117,7 @@ function SummaryPanel({ doc, section, sectionIndex, sectionSummary, onSectionSum
             This section: {sectionLabel(section, sectionIndex)} {secText && <AiBadge what="This summary" />}
           </h2>
           {secText ? (
-            <p className="rail-sum-text">{secText}</p>
+            <AiText as="p" className="rail-sum-text" text={secText} settings={settings} />
           ) : (
             <button
               type="button"

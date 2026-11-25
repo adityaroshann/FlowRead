@@ -4,51 +4,51 @@
 
 .fra-theme,
 .fra-theme[data-fra-theme='light'] {
-  --fra-bg: #FAF7F0;
-  --fra-text: #1F1B16;
-  --fra-muted: #5C554B;
-  --fra-accent: #0F6B6B;
+  --fra-bg: #FAFAF8;
+  --fra-text: #1A1D1A;
+  --fra-muted: #5C6158;
+  --fra-accent: #457552;
   --fra-mark-bg: #FFE58A;
-  --fra-mark-text: #1F1B16;
-  --fra-surface: #F2EDE3;
+  --fra-mark-text: #1A1D1A;
+  --fra-surface: #F0EEEA;
   --fra-on-accent: #FFFFFF;
-  --fra-border: #8F8576;
-  --fra-rule: #E4DDD0;
-  --fra-focus: #0F6B6B;
+  --fra-border: #8A8F85;
+  --fra-rule: #E6E3DC;
+  --fra-focus: #457552;
   --fra-plain-bg: #EEF3EF;
   --fra-error: #A3261E;
   color-scheme: light;
 }
 
 .fra-theme[data-fra-theme='cream'] {
-  --fra-bg: #F4ECD8;
-  --fra-text: #2B2418;
-  --fra-muted: #5A4E3B;
-  --fra-accent: #0F5F5F;
+  --fra-bg: #F7F3EC;
+  --fra-text: #3B3428;
+  --fra-muted: #665C4E;
+  --fra-accent: #4A6B40;
   --fra-mark-bg: #FFE08A;
-  --fra-mark-text: #2B2418;
-  --fra-surface: #EADFC6;
+  --fra-mark-text: #3B3428;
+  --fra-surface: #EDE8DF;
   --fra-on-accent: #FFFFFF;
-  --fra-border: #85775D;
-  --fra-rule: #DCCFB2;
-  --fra-focus: #0F5F5F;
+  --fra-border: #8C8070;
+  --fra-rule: #E2DACB;
+  --fra-focus: #4A6B40;
   --fra-plain-bg: #E9E6D3;
   --fra-error: #9A2419;
   color-scheme: light;
 }
 
 .fra-theme[data-fra-theme='dark'] {
-  --fra-bg: #1C1A17;
-  --fra-text: #E8E2D6;
-  --fra-muted: #B5AC9C;
-  --fra-accent: #6FCFC4;
+  --fra-bg: #121412;
+  --fra-text: #E8EAE5;
+  --fra-muted: #A0A59C;
+  --fra-accent: #6BBF7E;
   --fra-mark-bg: #5C4A12;
-  --fra-mark-text: #E8E2D6;
-  --fra-surface: #25221E;
-  --fra-on-accent: #1C1A17;
-  --fra-border: #857C6F;
-  --fra-rule: #38332D;
-  --fra-focus: #6FCFC4;
+  --fra-mark-text: #E8EAE5;
+  --fra-surface: #1A1E1A;
+  --fra-on-accent: #121412;
+  --fra-border: #7A8276;
+  --fra-rule: #2C322C;
+  --fra-focus: #6BBF7E;
   --fra-plain-bg: #1F2826;
   --fra-error: #FFB4A8;
   color-scheme: dark;
@@ -628,6 +628,6 @@ li.fra-speaking::before {
   line-height: 1.4;
   letter-spacing: 0.04em;
   word-spacing: normal;
-  color: var(--fra-accent, #0f6b6b);
+  color: var(--fra-accent, #457552);
   white-space: nowrap;
 }

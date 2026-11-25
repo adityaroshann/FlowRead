@@ -18,11 +18,11 @@ export const FONTS = [
 
 export const DEFAULT_SETTINGS = Object.freeze({
   theme: 'light', // THEMES id
-  font: 'atkinson', // FONTS id
+  font: 'serif', // FONTS id (Literata: FlowRead's original reading font)
   textScale: 1, // 1 = 100% ... 2 = 200%
   letterSpacing: 0, // em
   wordSpacing: 0, // em
-  lineHeight: 1.6,
+  lineHeight: 1.65,
   measure: 66, // max line length in ch (60-70 is comfortable)
   boldStarts: true, // bold the first letters of each word (FlowRead's core aid)
   boldIntensity: 0.45, // share of each word in bold: 0.35 light, 0.45 medium, 0.55 strong
@@ -32,8 +32,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
   summaries: false, // show "In this section" summary box
   focusLine: false, // reading band that follows the pointer, caret and read-aloud word
   focusLineSize: 2, // band height in lines (1-3)
-  focusDim: false, // dim the page above and below the band
   readingTimer: false, // Pomodoro-style reading timer chip
+  focusBlur: 'soft', // focus line background: 'off' | 'soft' | 'strong'
+  aiReadingStyle: true, // AI answers use the reading font, spacing and bold starts
+  showPageNumbers: false, // show original page/slide markers in the text
   noMotion: false, // disable all motion (also honours prefers-reduced-motion)
   minimalChrome: false, // hide decorative/non-essential UI
   thickFocus: false, // heavier focus rings
@@ -46,7 +48,7 @@ export const PROFILES = {
   standard: {
     id: 'standard',
     label: 'Standard',
-    description: 'Comfortable defaults with medium bold word starts.',
+    description: 'The classic FlowRead page: a calm serif with medium bold word starts.',
     settings: { ...DEFAULT_SETTINGS },
   },
   dyslexia: {
@@ -62,7 +64,7 @@ export const PROFILES = {
       letterSpacing: 0.12,
       wordSpacing: 0.16,
       lineHeight: 1.8,
-      measure: 65,
+      measure: 62,
       boldStarts: true,
       boldIntensity: 0.35,
       readAloud: true,
@@ -73,18 +75,19 @@ export const PROFILES = {
     id: 'focus',
     label: 'ADHD / Focus',
     description:
-      'Strong bold word starts, a reading band that follows you, one section at a time with a short summary first, and a reading timer.',
+      'A clear sans font with strong bold word starts, a focus line that blurs everything else, one section at a time and a reading timer.',
     settings: {
       ...DEFAULT_SETTINGS,
       focusMode: true,
       summaries: true,
+      font: 'lexend',
       boldStarts: true,
       boldIntensity: 0.55,
       focusLine: true,
-      focusDim: true,
+      focusBlur: 'soft',
       readingTimer: true,
-      lineHeight: 1.7,
-      measure: 62,
+      lineHeight: 1.8,
+      measure: 58,
       readAloud: true,
     },
   },
@@ -95,6 +98,7 @@ export const PROFILES = {
       'Minimal interface with no motion, clear landmarks, full image descriptions, spoken math and announced section counts.',
     settings: {
       ...DEFAULT_SETTINGS,
+      font: 'atkinson',
       minimalChrome: true,
       noMotion: true,
       boldStarts: false,

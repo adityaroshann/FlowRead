@@ -26,8 +26,9 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--paper) 94%, transparent);
-  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--paper) 80%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
 }
 [data-ui-theme='high-contrast'] .topbar {
   background: var(--paper);
@@ -123,10 +124,9 @@
 
 .display {
   font-family: var(--font-display);
-  font-weight: 560;
-  letter-spacing: -0.012em;
-  line-height: 1.06;
-  font-variation-settings: 'opsz' 144, 'SOFT' 30;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
 }
 
 /* ---------- Buttons ---------- */

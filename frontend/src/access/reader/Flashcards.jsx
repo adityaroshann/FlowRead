@@ -5,6 +5,7 @@ import { sectionLabel, sectionText, slugify } from '@flowread/core/docModel.js';
 import { makeFlashcards } from '../shared/api.js';
 import { saveBlob } from '../../utils/export.js';
 import AiBadge from '../shared/AiBadge.jsx';
+import AiText from '../shared/AiText.jsx';
 
 // "Check what you remember": AI flashcards made from this document, then
 // flip-card practice (cards you don't know yet come back) or a quick
@@ -26,7 +27,7 @@ function flashcardsCsv(cards) {
   return ['front,back', ...cards.map((c) => `${csvCell(c.front)},${csvCell(c.back)}`)].join('\r\n');
 }
 
-function Practice({ cards, sectionName, onDone }) {
+function Practice({ cards, sectionName, onDone, settings }) {
   const [queue, setQueue] = useState(() => cards.map((_, i) => i));
   const [flipped, setFlipped] = useState(false);
   const [known, setKnown] = useState(0);
@@ -105,9 +106,7 @@ function Practice({ cards, sectionName, onDone }) {
         <span className="fc-side-label">
           {flipped ? 'Answer' : card.kind === 'cloze' ? 'Fill the gap' : card.kind === 'term' ? 'Term' : 'Question'}
         </span>
-        <span className="fc-text">
-          {flipped ? card.back : card.front}
-        </span>
+        <AiText className="fc-text" text={flipped ? card.back : card.front} settings={settings} portal />
         {sectionName(card) && (
           <span className="fc-src">
             From: {sectionName(card)}
@@ -131,7 +130,7 @@ function Practice({ cards, sectionName, onDone }) {
   );
 }
 
-function Quiz({ cards, onDone }) {
+function Quiz({ cards, onDone, settings }) {
   // Wrong options come from other cards' answers, so the quiz needs no AI call.
   const questions = useMemo(
     () =>
@@ -173,7 +172,7 @@ function Quiz({ cards, onDone }) {
         Question {at + 1} of {questions.length} · {score} right
       </p>
       <p className="fc-q" tabIndex={-1} ref={headRef}>
-        {q.card.front}
+        <AiText text={q.card.front} settings={settings} portal />
       </p>
       <ul className="fc-options" role="list">
         {q.options.map((opt, k) => {
@@ -189,7 +188,7 @@ function Quiz({ cards, onDone }) {
                   if (correct(opt)) setScore((s) => s + 1);
                 }}
               >
-                {opt}
+                <AiText text={opt} settings={settings} portal />
                 {picked != null && correct(opt) && <span className="sr-only"> (correct answer)</span>}
                 {picked === k && !correct(opt) && <span className="sr-only"> (your answer, not correct)</span>}
               </button>
@@ -218,7 +217,7 @@ function Quiz({ cards, onDone }) {
   );
 }
 
-export default function Flashcards({ isOpen, onOpenChange, doc, onSaveCards }) {
+export default function Flashcards({ isOpen, onOpenChange, doc, onSaveCards, settings }) {
   const cards = doc.flashcards?.cards || [];
   const [status, setStatus] = useState('idle'); // idle | loading | error
   const [error, setError] = useState('');
@@ -340,9 +339,9 @@ export default function Flashcards({ isOpen, onOpenChange, doc, onSaveCards }) {
                     </p>
                   )}
                   {mode === 'quiz' ? (
-                    <Quiz key={`q${round}`} cards={cards} onDone={done} />
+                    <Quiz key={`q${round}`} cards={cards} onDone={done} settings={settings} />
                   ) : (
-                    <Practice key={`c${round}`} cards={practiceCards} sectionName={(c) => sectionsById.get(c.sectionId)} onDone={done} />
+                    <Practice key={`c${round}`} cards={practiceCards} sectionName={(c) => sectionsById.get(c.sectionId)} onDone={done} settings={settings} />
                   )}
                 </>
               )}

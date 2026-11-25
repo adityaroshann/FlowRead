@@ -14,7 +14,7 @@ import type { SimplifyResult, TabState, ToBackground, ToContent } from '../src/l
 const CONTENT_FILE = '/content-scripts/flowread.js';
 const AUTO_SCRIPT_ID = 'flowread-auto';
 const ALL_SITES = ['http://*/*', 'https://*/*'];
-const TEAL = '#0F6B6B';
+const TEAL = '#457552'; // FlowRead sage (badge colour)
 
 // ---------- small session store (storage.session, memory fallback) ----------
 const memory = new Map<string, unknown>();

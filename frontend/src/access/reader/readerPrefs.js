@@ -6,6 +6,8 @@ import { PROFILES, resolveSettings, settingsForProfile } from '@flowread/core/pr
 // per-document reading progress.
 
 export const PREFS_KEY = 'flowread-access:reader-prefs';
+// Bump when profile presets change in a way old saved settings would hide.
+export const PREFS_VERSION = 3;
 const progressKey = (docId) => `flowread-access:progress:${docId}`;
 
 /**
@@ -24,9 +26,11 @@ function read() {
     if (raw) {
       const p = JSON.parse(raw);
       const profileId = PROFILES[p?.profileId] ? p.profileId : 'standard';
+      // Settings saved by an older version are reset to the profile's current preset.
+      const fresh = p?.version === PREFS_VERSION && p?.settings;
       return {
         profileId,
-        settings: resolveSettings(p?.settings || webSettingsForProfile(profileId)),
+        settings: fresh ? resolveSettings(p.settings) : webSettingsForProfile(profileId),
         chosen: true,
         // App-level option: reduce motion in the interface (separate from the reading profile)
         reduceMotion: !!p?.reduceMotion,
@@ -52,7 +56,7 @@ function write(next) {
     try {
       window.localStorage.setItem(
         PREFS_KEY,
-        JSON.stringify({ profileId: next.profileId, settings: next.settings, reduceMotion: next.reduceMotion }),
+        JSON.stringify({ version: PREFS_VERSION, profileId: next.profileId, settings: next.settings, reduceMotion: next.reduceMotion }),
       );
     } catch {
       /* storage unavailable: preferences last for this visit only */

@@ -1,11 +1,12 @@
-import { AArrowDown, AArrowUp, Download, Pause, Play, ScanLine, SlidersHorizontal, Square } from 'lucide-react';
+import { AArrowDown, AArrowUp, Download, Pause, Play, ScanLine, SlidersHorizontal, Sparkles, Square } from 'lucide-react';
 import { PROFILES, PROFILE_ORDER } from '@flowread/core/profiles.js';
 import { BOLD_INTENSITY } from '@flowread/core/boldStarts.js';
 import { chooseProfile, updateSettings } from './readerPrefs.js';
 import ReadingTimer from './ReadingTimer.jsx';
 
-// The few controls people reach for while reading, always in view.
-// Everything else lives behind "More".
+// The original FlowRead floating toolbar: one frosted pill at the bottom of
+// the page with the few controls people reach for while reading. Everything
+// else lives behind "More".
 
 const STRENGTHS = [
   { id: 'off', label: 'Off' },
@@ -15,22 +16,41 @@ const STRENGTHS = [
 ];
 
 function strengthOf(s) {
-  if (!s.boldStarts) return 'off';
+  if (!s.boldStarts) return STRENGTHS[0];
   const v = Number(s.boldIntensity) || BOLD_INTENSITY.medium;
-  return STRENGTHS.slice(1).reduce((a, b) => (Math.abs(b.value - v) < Math.abs(a.value - v) ? b : a)).id;
+  return STRENGTHS.slice(1).reduce((a, b) => (Math.abs(b.value - v) < Math.abs(a.value - v) ? b : a));
 }
 
 const SCALE_STEP = 0.1;
 const clampScale = (v) => Math.round(Math.min(2, Math.max(0.8, v)) * 100) / 100;
 
-export default function ReadingBar({ prefs, speech, showSpeech, onReadAloud, onMore, onDownload, onAnnounce }) {
+function Tool({ label, shortcut, pressed, onClick, children, disabled, className = '', ...rest }) {
+  const tip = shortcut ? `${label} (${shortcut})` : label;
+  return (
+    <button
+      type="button"
+      className={`ftb-btn${pressed ? ' is-on' : ''} ${className}`}
+      onClick={onClick}
+      aria-pressed={pressed === undefined ? undefined : !!pressed}
+      aria-keyshortcuts={shortcut}
+      title={tip}
+      disabled={disabled}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+
+export default function ReadingBar({ prefs, speech, showSpeech, onReadAloud, onMore, onDownload, onSummary, onAnnounce, hidden }) {
   const s = prefs.settings;
   const strength = strengthOf(s);
 
-  const setStrength = (id) => {
-    const opt = STRENGTHS.find((o) => o.id === id);
-    updateSettings(id === 'off' ? { boldStarts: false } : { boldStarts: true, boldIntensity: opt.value });
-    onAnnounce?.(id === 'off' ? 'Bold word starts off.' : `Bold word starts: ${opt.label.toLowerCase()}.`);
+  const cycleStrength = () => {
+    const i = STRENGTHS.findIndex((o) => o.id === strength.id);
+    const next = STRENGTHS[(i + 1) % STRENGTHS.length];
+    updateSettings(next.id === 'off' ? { boldStarts: false } : { boldStarts: true, boldIntensity: next.value });
+    onAnnounce?.(next.id === 'off' ? 'Bold word starts off.' : `Bold word starts: ${next.label.toLowerCase()}.`);
   };
   const setScale = (delta) => {
     const next = clampScale((Number(s.textScale) || 1) + delta);
@@ -38,12 +58,13 @@ export default function ReadingBar({ prefs, speech, showSpeech, onReadAloud, onM
     onAnnounce?.(`Text size ${Math.round(next * 100)}%.`);
   };
 
+  if (hidden) return null;
   return (
-    <div className="rbar" role="toolbar" aria-label="Reading controls">
-      <label className="rbar-profile">
+    <div className="ftb" role="toolbar" aria-label="Reading controls">
+      <label className="ftb-profile" title="Reading profile">
         <span className="sr-only">Reading profile</span>
         <select
-          className="rbar-select"
+          className="ftb-select"
           value={prefs.profileId}
           onChange={(e) => {
             chooseProfile(e.target.value);
@@ -58,75 +79,64 @@ export default function ReadingBar({ prefs, speech, showSpeech, onReadAloud, onM
         </select>
       </label>
 
-      <fieldset className="rbar-seg" aria-label="Bold word starts">
-        <legend className="sr-only">Bold word starts</legend>
-        <span className="rbar-seg-label" aria-hidden="true">
-          <b>Bo</b>ld
-        </span>
-        {STRENGTHS.map((o) => (
-          <label key={o.id} className="rbar-seg-opt" title={o.id === 'off' ? 'Bold word starts off' : `${o.label} bold word starts`}>
-            <input type="radio" name="rbar-bold" checked={strength === o.id} onChange={() => setStrength(o.id)} />
-            <span>{o.label}</span>
-          </label>
-        ))}
-      </fieldset>
+      <span className="ftb-div" aria-hidden="true" />
 
-      <button
-        type="button"
-        className={`btn btn-sm rbar-toggle${s.focusLine ? ' is-on' : ''}`}
-        aria-pressed={!!s.focusLine}
-        aria-keyshortcuts="F"
-        title="Focus line: a reading band that follows your pointer (F)"
+      <Tool label={`Bold word starts: ${strength.label}. Change`} pressed={strength.id !== 'off'} onClick={cycleStrength} className="ftb-bold">
+        <span className="ftb-bold-glyph" aria-hidden="true">
+          <b>B</b>o
+        </span>
+        <span className="ftb-bold-level" aria-hidden="true">
+          {strength.label}
+        </span>
+      </Tool>
+      <Tool
+        label="Focus line"
+        shortcut="F"
+        pressed={!!s.focusLine}
         onClick={() => {
           updateSettings({ focusLine: !s.focusLine });
           onAnnounce?.(`Focus line ${s.focusLine ? 'off' : 'on'}.`);
         }}
       >
-        <ScanLine size={16} aria-hidden="true" />
-        <span className="rbar-text">Focus line</span>
-      </button>
-
+        <ScanLine size={18} aria-hidden="true" />
+      </Tool>
       {showSpeech && (
-        <div className="rbar-group" role="group" aria-label="Read aloud">
-          <button
-            type="button"
-            className={`btn btn-sm rbar-toggle${speech.status === 'speaking' ? ' is-on' : ''}`}
-            onClick={onReadAloud}
-            aria-pressed={speech.status === 'speaking'}
-            title="Read aloud from here, with each word highlighted"
-          >
-            {speech.status === 'speaking' ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
-            <span className="rbar-text">{speech.status === 'speaking' ? 'Pause' : speech.status === 'paused' ? 'Resume' : 'Read aloud'}</span>
-          </button>
+        <>
+          <Tool label={speech.status === 'speaking' ? 'Pause reading aloud' : speech.status === 'paused' ? 'Resume reading aloud' : 'Read aloud'} pressed={speech.status === 'speaking'} onClick={onReadAloud}>
+            {speech.status === 'speaking' ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
+          </Tool>
           {speech.status !== 'idle' && (
-            <button type="button" className="btn btn-sm btn-icon" onClick={speech.stop} aria-label="Stop reading" title="Stop">
-              <Square size={14} aria-hidden="true" />
-            </button>
+            <Tool label="Stop reading aloud" onClick={speech.stop}>
+              <Square size={15} aria-hidden="true" />
+            </Tool>
           )}
-        </div>
+        </>
+      )}
+      <Tool label="Smaller text" onClick={() => setScale(-SCALE_STEP)} disabled={s.textScale <= 0.8}>
+        <AArrowDown size={18} aria-hidden="true" />
+      </Tool>
+      <Tool label="Larger text" onClick={() => setScale(SCALE_STEP)} disabled={s.textScale >= 2}>
+        <AArrowUp size={18} aria-hidden="true" />
+      </Tool>
+
+      {s.readingTimer && (
+        <>
+          <span className="ftb-div" aria-hidden="true" />
+          <ReadingTimer onAnnounce={onAnnounce} />
+        </>
       )}
 
-      <div className="rbar-group rbar-size" role="group" aria-label="Text size">
-        <button type="button" className="btn btn-sm btn-icon" onClick={() => setScale(-SCALE_STEP)} disabled={s.textScale <= 0.8} aria-label="Smaller text" title="Smaller text">
-          <AArrowDown size={17} aria-hidden="true" />
-        </button>
-        <button type="button" className="btn btn-sm btn-icon" onClick={() => setScale(SCALE_STEP)} disabled={s.textScale >= 2} aria-label="Larger text" title="Larger text">
-          <AArrowUp size={17} aria-hidden="true" />
-        </button>
-      </div>
+      <span className="ftb-div" aria-hidden="true" />
 
-      {s.readingTimer && <ReadingTimer onAnnounce={onAnnounce} />}
-
-      <span className="rbar-spacer" aria-hidden="true" />
-
-      <button type="button" className="btn btn-sm" onClick={onMore} aria-haspopup="dialog" title="Theme, font, spacing and more">
-        <SlidersHorizontal size={16} aria-hidden="true" />
-        <span className="rbar-text">More</span>
-      </button>
-      <button type="button" className="btn btn-sm" onClick={onDownload} aria-haspopup="dialog" title="Download as PDF, Word or HTML">
-        <Download size={16} aria-hidden="true" />
-        <span className="rbar-text">Download</span>
-      </button>
+      <Tool label="Summary" onClick={onSummary}>
+        <Sparkles size={18} aria-hidden="true" />
+      </Tool>
+      <Tool label="More settings" onClick={onMore} aria-haspopup="dialog">
+        <SlidersHorizontal size={18} aria-hidden="true" />
+      </Tool>
+      <Tool label="Download" onClick={onDownload} aria-haspopup="dialog">
+        <Download size={18} aria-hidden="true" />
+      </Tool>
     </div>
   );
 }

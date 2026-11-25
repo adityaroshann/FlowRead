@@ -6,9 +6,9 @@ import { resolveSettings } from './profiles.js';
 // Theme colours. Every text/background pair is at least 4.5:1 (most are 7:1+).
 // Keep in sync with frontend/src/styles/themes.css and backend/export themes.
 export const THEME_COLORS = Object.freeze({
-  light: { bg: '#FAF7F0', text: '#1F1B16', muted: '#5C554B', accent: '#0F6B6B', mark: '#FFE58A' },
-  cream: { bg: '#F4ECD8', text: '#2B2418', muted: '#5A4E3B', accent: '#0F5F5F', mark: '#FFE08A' },
-  dark: { bg: '#1C1A17', text: '#E8E2D6', muted: '#B5AC9C', accent: '#6FCFC4', mark: '#5C4A12' },
+  light: { bg: '#FAFAF8', text: '#1A1D1A', muted: '#5C6158', accent: '#457552', mark: '#FFE58A' },
+  cream: { bg: '#F7F3EC', text: '#3B3428', muted: '#665C4E', accent: '#4A6B40', mark: '#FFE08A' },
+  dark: { bg: '#121412', text: '#E8EAE5', muted: '#A0A59C', accent: '#6BBF7E', mark: '#5C4A12' },
   'high-contrast': { bg: '#000000', text: '#FFFFFF', muted: '#E6E6E6', accent: '#FFE600', mark: '#00468C' },
 });
 

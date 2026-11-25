@@ -1,5 +1,5 @@
 /* ==========================================================================
-   FlowRead design tokens. "Warm editorial, calm tool."
+   FlowRead design tokens. The original FlowRead look (sage on off-white, Inter + Literata), refined.
 
    The interface follows the reader's chosen theme, set on <html> as
    data-ui-theme = light (Paper) | cream (Sepia) | dark (Dusk) | high-contrast.
@@ -12,14 +12,15 @@
 
 :root {
   /* Type */
-  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
-  --font-ui: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* The original FlowRead voice: Inter for interface and headlines, Literata for reading. */
+  --font-display: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-ui: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
   --font-system: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --font-atkinson: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible';
   --font-lexend: 'Lexend Variable', 'Lexend';
   --font-dyslexic: 'OpenDyslexic';
   --font-body: 'Literata Variable', 'Literata';
-  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
   /* Type scale (1.25, 16px base) */
   --t-xs: 0.8125rem;
@@ -62,72 +63,72 @@
 /* ---------- Paper (light) ---------- */
 :root,
 [data-ui-theme='light'] {
-  --paper: #FAF7F0;
-  --surface: #F2EDE3;
-  --raised: #FFFDF8;
-  --ink: #1F1B16;
-  --muted: #5C554B;
-  --accent: #0F6B6B;
-  --accent-strong: #0B5656;
+  --paper: #FAFAF8;
+  --surface: #F0EEEA;
+  --raised: #FFFFFF;
+  --ink: #1A1D1A;
+  --muted: #5C6158;
+  --accent: #457552;
+  --accent-strong: #3A6446;
   --on-accent: #FFFFFF;
-  --accent-tint: rgba(15, 107, 107, 0.09);
+  --accent-tint: rgba(69, 117, 82, 0.09);
   --mark: #FFE58A;
-  --mark-ink: #1F1B16;
-  --rule: #E4DDD0;
-  --line: #8F8576;
-  --focus: #0F6B6B;
+  --mark-ink: #1A1D1A;
+  --rule: #E6E3DC;
+  --line: #8A8F85;
+  --focus: #457552;
   --danger: #A3261E;
   --danger-tint: #F8E6E2;
   --ok: #2E6A3D;
-  --scrim: rgba(31, 27, 22, 0.32);
-  --sh-1: 0 1px 2px rgba(31, 27, 22, 0.06);
-  --sh-2: 0 1px 2px rgba(31, 27, 22, 0.05), 0 12px 32px -12px rgba(31, 27, 22, 0.22);
-  --sh-3: 0 2px 4px rgba(31, 27, 22, 0.05), 0 24px 64px -16px rgba(31, 27, 22, 0.3);
+  --scrim: rgba(26, 29, 26, 0.32);
+  --sh-1: 0 1px 2px rgba(26, 29, 26, 0.06);
+  --sh-2: 0 1px 2px rgba(26, 29, 26, 0.05), 0 12px 32px -12px rgba(26, 29, 26, 0.22);
+  --sh-3: 0 2px 4px rgba(26, 29, 26, 0.05), 0 24px 64px -16px rgba(26, 29, 26, 0.3);
   color-scheme: light;
 }
 
 /* ---------- Sepia (cream) ---------- */
 [data-ui-theme='cream'] {
-  --paper: #F4ECD8;
-  --surface: #EADFC6;
-  --raised: #FAF4E6;
-  --ink: #2B2418;
-  --muted: #5A4E3B;
-  --accent: #0F5F5F;
-  --accent-strong: #0A4C4C;
+  --paper: #F7F3EC;
+  --surface: #EDE8DF;
+  --raised: #FBF8F3;
+  --ink: #3B3428;
+  --muted: #665C4E;
+  --accent: #4A6B40;
+  --accent-strong: #3E5A35;
   --on-accent: #FFFFFF;
-  --accent-tint: rgba(15, 95, 95, 0.1);
+  --accent-tint: rgba(74, 107, 64, 0.1);
   --mark: #FFE08A;
-  --mark-ink: #2B2418;
-  --rule: #DCCFB2;
-  --line: #85775D;
-  --focus: #0F5F5F;
+  --mark-ink: #3B3428;
+  --rule: #E2DACB;
+  --line: #8C8070;
+  --focus: #4A6B40;
   --danger: #9A2419;
   --danger-tint: #F3DDD3;
   --ok: #2E6A3D;
-  --scrim: rgba(43, 36, 24, 0.34);
-  --sh-1: 0 1px 2px rgba(43, 36, 24, 0.07);
-  --sh-2: 0 1px 2px rgba(43, 36, 24, 0.06), 0 12px 32px -12px rgba(43, 36, 24, 0.25);
-  --sh-3: 0 2px 4px rgba(43, 36, 24, 0.06), 0 24px 64px -16px rgba(43, 36, 24, 0.32);
+  --scrim: rgba(59, 52, 40, 0.34);
+  --sh-1: 0 1px 2px rgba(59, 52, 40, 0.07);
+  --sh-2: 0 1px 2px rgba(59, 52, 40, 0.06), 0 12px 32px -12px rgba(59, 52, 40, 0.25);
+  --sh-3: 0 2px 4px rgba(59, 52, 40, 0.06), 0 24px 64px -16px rgba(59, 52, 40, 0.32);
   color-scheme: light;
 }
 
 /* ---------- Dusk (dark) ---------- */
 [data-ui-theme='dark'] {
-  --paper: #1C1A17;
-  --surface: #25221E;
-  --raised: #2C2924;
-  --ink: #E8E2D6;
-  --muted: #B5AC9C;
-  --accent: #6FCFC4;
-  --accent-strong: #8ADBD1;
-  --on-accent: #1C1A17;
-  --accent-tint: rgba(111, 207, 196, 0.12);
+  --paper: #121412;
+  --surface: #1A1E1A;
+  --raised: #222622;
+  --ink: #E8EAE5;
+  --muted: #A0A59C;
+  --accent: #6BBF7E;
+  --accent-strong: #8FD89E;
+  --on-accent: #121412;
+  --accent-tint: rgba(107, 191, 126, 0.12);
   --mark: #5C4A12;
-  --mark-ink: #F6EEDD;
-  --rule: #38332D;
-  --line: #857C6F;
-  --focus: #6FCFC4;
+  --mark-ink: #F1F3EE;
+  --rule: #2C322C;
+  --line: #7A8276;
+  --focus: #6BBF7E;
   --danger: #FFB4A8;
   --danger-tint: #3A1F1B;
   --ok: #95D5A4;

@@ -12,12 +12,12 @@
   src: url('/fonts/atkinson-hyperlegible-next-latin-700-normal.woff2') format('woff2');
 }
 :root {
-  --bg: #faf7f0;
+  --bg: #FAFAF8;
   --surface: #f2ede2;
-  --ink: #1f1b16;
-  --muted: #5c554b;
-  --accent: #0f6b6b;
-  --accent-ink: #faf7f0;
+  --ink: #1A1D1A;
+  --muted: #5C6158;
+  --accent: #457552;
+  --accent-ink: #FAFAF8;
   --line: #ddd5c6;
   --danger: #8c1d18;
   --ease: 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -25,12 +25,12 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1c1a17;
+    --bg: #121412;
     --surface: #26231f;
-    --ink: #e8e2d6;
-    --muted: #b5ac9c;
-    --accent: #6fcfc4;
-    --accent-ink: #1c1a17;
+    --ink: #E8EAE5;
+    --muted: #A0A59C;
+    --accent: #6BBF7E;
+    --accent-ink: #121412;
     --line: #3d3830;
     --danger: #ffb4ab;
     color-scheme: dark;

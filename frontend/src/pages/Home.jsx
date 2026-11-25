@@ -34,7 +34,7 @@ export default function Home() {
   const recent = useRecent();
 
   useEffect(() => {
-    document.title = 'FlowRead: study material, rebuilt for the way you read';
+    document.title = 'FlowRead: read faster, focus better';
     // Wake the conversion server early; the free tier sleeps when idle.
     getHealth();
   }, []);
@@ -46,25 +46,30 @@ export default function Home() {
 
   return (
     <AppShell mainClass="home">
-      <div className="home-hero">
-        <div className="home-intro">
-          <h1 className="display home-title">Study material, rebuilt for the way you read.</h1>
-          <p className="home-lede">Upload a PDF, slides or notes. FlowRead keeps the structure and sets it in a way that’s easier to read.</p>
-          <ImportBox />
-          <p className="home-ai">
-            <Sparkles size={14} aria-hidden="true" /> AI describes images, reads scanned pages and makes flashcards. Anything it writes is labelled.
-          </p>
-          <p className="home-sample">
-            No file to hand?{' '}
-            <button type="button" className="linklike" onClick={openSample}>
-              Open a sample biology handout
-            </button>
-          </p>
-        </div>
-        <div className="home-demo">
-          <Specimen />
-        </div>
-      </div>
+      <section className="home-hero" aria-labelledby="home-title">
+        <h1 id="home-title" className="display home-title">
+          Read faster. <span className="home-accent">Focus better.</span>
+        </h1>
+        <p className="home-lede">Turn any document into a calm, accessible reading experience. Built with ADHD and dyslexic readers in mind.</p>
+        <p className="home-kicker" aria-hidden="true">
+          Try it live
+        </p>
+        <Specimen />
+      </section>
+
+      <section className="home-start" aria-labelledby="start-title">
+        <h2 id="start-title" className="display home-h2">
+          Start reading
+        </h2>
+        <ImportBox />
+        <p className="home-note">
+          <Sparkles size={14} aria-hidden="true" /> AI describes images, reads scanned pages and makes flashcards. Anything it writes is
+          labelled.{' '}
+          <button type="button" className="linklike" onClick={openSample}>
+            Try a sample handout
+          </button>
+        </p>
+      </section>
 
       {recent.length > 0 && (
         <section className="home-recent" aria-labelledby="recent-title">
