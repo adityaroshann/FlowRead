@@ -35,6 +35,7 @@ export const RULES = {
   'doc-missing-lang': { severity: 'serious', label: 'Document language not set' },
   'section-too-long': { severity: 'minor', label: 'Section is very long' },
   'math-no-spoken': { severity: 'moderate', label: 'Math has no spoken version' },
+  'page-needs-ocr': { severity: 'serious', label: 'Scanned page not converted to text' },
 };
 
 const blank = (s) => typeof s !== 'string' || s.trim() === '';
@@ -89,6 +90,12 @@ export function checkDoc(doc) {
           break;
         }
         case 'image': {
+          // A scanned page kept as a picture (OCR unavailable). This one issue
+          // replaces the alt-text rules for that block.
+          if (b.origin === 'page') {
+            issues.push(issue('page-needs-ocr', sid, bid, 'This page is a scanned image and could not be converted to text.'));
+            break;
+          }
           if (b.altStatus === 'decorative') break;
           if (b.altStatus === 'missing' || blank(b.alt)) {
             issues.push(issue('image-alt-missing', sid, bid, 'Image has no text alternative.'));
