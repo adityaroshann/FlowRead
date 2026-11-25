@@ -1,0 +1,14 @@
+{
+  "name": "@flowread/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared reading profiles, document model, checker and bold-word-starts algorithm.",
+  "exports": {
+    ".": "./src/index.js",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  }
+}
