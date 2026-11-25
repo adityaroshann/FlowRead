@@ -1,3 +1,4 @@
+/* global Buffer */
 import { expect, test } from '@playwright/test';
 import { MOCK_DOC, offlineApi, seedSample, tabTo, usePrefs } from './helpers.js';
 
