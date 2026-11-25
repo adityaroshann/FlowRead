@@ -1,0 +1,9 @@
+backend/
+extension/
+docs/
+**/node_modules
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+**/__pycache__
+.claude/
