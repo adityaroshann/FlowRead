@@ -18,7 +18,7 @@ export const FONTS = [
 
 export const DEFAULT_SETTINGS = Object.freeze({
   theme: 'light', // THEMES id
-  font: 'system', // FONTS id
+  font: 'atkinson', // FONTS id
   textScale: 1, // 1 = 100% ... 2 = 200%
   letterSpacing: 0, // em
   wordSpacing: 0, // em
