@@ -22,7 +22,7 @@ import io
 import re
 import zipfile
 
-from .common import MIN_IMAGE_SIDE, clean_text, image_block, image_to_data_url
+from .common import MIN_IMAGE_SIDE, clean_text, image_block, image_to_data_url, meaningful_alt
 from .html_blocks import MATH_CLOSE, MATH_OPEN, PAGE_BREAK, HtmlConverter
 
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
@@ -198,7 +198,7 @@ def extract_docx(data: bytes, progress=None) -> tuple[str, list[dict], str]:
             return []  # undecodable (e.g. EMF) or an icon-sized picture
         key = f"img{len(images)}"
         blk = image_block(enc[0])
-        alt = clean_text(image.alt_text or "")
+        alt = meaningful_alt(image.alt_text)
         if alt:
             # Author-supplied alt text: keep it, but staff must still review it.
             blk["alt"], blk["altStatus"], blk["_author_alt"] = alt, "ai", True

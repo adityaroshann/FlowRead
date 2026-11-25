@@ -550,3 +550,47 @@ def make_rich_docx() -> bytes:
     out = io.BytesIO()
     d.save(out)
     return out.getvalue()
+
+
+def make_course_pptx() -> bytes:
+    """Four slides: title slide, bullets with a sub-level + notes, a table + picture, and an untitled slide."""
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+
+    prs = Presentation()
+    s1 = prs.slides.add_slide(prs.slide_layouts[0])
+    s1.shapes.title.text = "Climate Systems"
+    s1.placeholders[1].text = "Lecture 5 overview"
+
+    s2 = prs.slides.add_slide(prs.slide_layouts[1])
+    s2.shapes.title.text = "The greenhouse effect"
+    tf = s2.placeholders[1].text_frame
+    tf.text = "Sunlight warms the surface"
+    for text, level in (("Infrared leaves the surface", 0), ("Some is absorbed by gases", 1),
+                        ("Carbon dioxide", 1), ("The air warms", 0)):
+        p = tf.add_paragraph()
+        p.text = text
+        p.level = level
+    s2.notes_slide.notes_text_frame.text = "Ask the class which gases they already know."
+
+    s3 = prs.slides.add_slide(prs.slide_layouts[5])
+    s3.shapes.title.text = "Gas concentrations"
+    rows = [("Gas", "Share"), ("Nitrogen", "78%"), ("Oxygen", "21%")]
+    shape = s3.shapes.add_table(3, 2, Inches(0.5), Inches(1.5), Inches(4), Inches(1.5))
+    for r, row in enumerate(rows):
+        for c, v in enumerate(row):
+            shape.table.cell(r, c).text = v
+    s3.shapes.add_picture(io.BytesIO(make_png()), Inches(5), Inches(3.5), width=Inches(3))
+    box = s3.shapes.add_textbox(Inches(0.5), Inches(5.5), Inches(6), Inches(1))
+    para = box.text_frame.paragraphs[0]
+    run = para.add_run()
+    run.text = "Source: synthetic data"
+    run.font.italic = True
+    run.font.size = Pt(14)
+
+    s4 = prs.slides.add_slide(prs.slide_layouts[6])  # blank: no title placeholder
+    tb = s4.shapes.add_textbox(Inches(1), Inches(1), Inches(6), Inches(1))
+    tb.text_frame.text = "Questions?"
+    out = io.BytesIO()
+    prs.save(out)
+    return out.getvalue()

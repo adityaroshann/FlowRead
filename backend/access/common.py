@@ -428,3 +428,16 @@ def paragraph_block(text: str, marks: list[dict] | None = None, role: str | None
     if role in ("notes", "caption"):
         b["role"] = role
     return b
+
+
+_NON_ALT_RE = re.compile(
+    r"^(?:[\w\-. ()]+\.(?:png|jpe?g|gif|bmp|tiff?|emf|wmf|svg|webp)|(?:picture|image|graphic|grafik|bild)\s*\d*"
+    r"|a picture containing.*|description automatically generated.*)$",
+    re.IGNORECASE,
+)
+
+
+def meaningful_alt(alt: str | None) -> str:
+    """Author alt text, or "" when it is only a file name or an auto-generated label."""
+    a = clean_text(alt or "")
+    return "" if not a or _NON_ALT_RE.match(a) else a
