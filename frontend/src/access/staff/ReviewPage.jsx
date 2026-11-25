@@ -375,7 +375,7 @@ function Workspace({ initialDoc, mode }) {
                   Published {formatDate(doc.publishedAt)}. Edits save to the published version automatically.
                 </p>
               ) : (
-                <p>Publishing makes the student link work. You can publish at any score and keep editing afterwards.</p>
+                <p>Publishing marks the document ready for students and gives you a link and an accessible HTML file to share. You can publish at any score and keep editing afterwards.</p>
               )}
               {blocking.length > 0 && (
                 <p className="fa-hint" style={{ marginTop: '0.4rem' }}>

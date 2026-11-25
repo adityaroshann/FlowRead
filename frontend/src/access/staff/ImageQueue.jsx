@@ -16,6 +16,7 @@ const ImageCard = memo(function ImageCard({ item, number, total, onChangeBlock }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
+  const [undo, setUndo] = useState(null);
   const status = block.altStatus || 'missing';
   const id = block.id;
   const titleId = `fa-imgtitle-${id}`;
@@ -26,10 +27,13 @@ const ImageCard = memo(function ImageCard({ item, number, total, onChangeBlock }
     setBusy(true);
     setError('');
     setNote('');
+    setUndo(null);
+    const previous = { alt: block.alt, altStatus: block.altStatus };
     try {
       const res = await describeImage(block.src, context);
       const alt = (res?.alt || '').trim();
       onChangeBlock(id, { alt, altStatus: alt ? 'ai' : 'missing' });
+      if (previous.altStatus === 'approved' && previous.alt) setUndo(previous);
       setNote(
         res?.decorative
           ? 'New AI draft ready. The AI thinks this image may be decorative; mark it decorative if it adds no information.'
@@ -155,6 +159,22 @@ const ImageCard = memo(function ImageCard({ item, number, total, onChangeBlock }
             </p>
           )}
           {note && <p className="fa-hint">{note}</p>}
+          {undo && (
+            <p className="fa-hint">
+              The approved description was replaced.{' '}
+              <button
+                type="button"
+                className="fa-btn fa-btn--sm fa-btn--ghost"
+                onClick={() => {
+                  onChangeBlock(id, undo);
+                  setUndo(null);
+                  setNote('Approved description restored.');
+                }}
+              >
+                Undo
+              </button>
+            </p>
+          )}
         </div>
       </div>
     </li>

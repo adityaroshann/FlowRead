@@ -920,7 +920,7 @@ function ReaderView({ initialDoc }) {
                   : 'Turn the key points into flashcards and a short quiz.'}
               </p>
               <button type="button" className="btn btn-primary" onClick={() => setCardsOpen(true)}>
-                {doc.flashcards?.cards?.length ? 'Practise flashcards' : 'Make flashcards'} <AiBadge what="Flashcards" />
+                {doc.flashcards?.cards?.length ? 'Practise flashcards' : 'Make flashcards'} <AiBadge what="These flashcards" />
               </button>
             </section>
           )}

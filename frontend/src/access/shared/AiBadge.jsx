@@ -6,7 +6,7 @@ import { Sparkles } from 'lucide-react';
  * readers can see what came from the document and what came from AI.
  */
 export default function AiBadge({ what = 'This', className = '' }) {
-  const tip = `${what} was written by AI. Check it against the original.`;
+  const tip = `AI wrote ${what.charAt(0).toLowerCase()}${what.slice(1)}. Check it against the original.`;
   return (
     <span className={`ai-badge ${className}`} title={tip}>
       <Sparkles size={12} aria-hidden="true" />

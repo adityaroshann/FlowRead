@@ -37,6 +37,7 @@ export default function NewConversion() {
   const [progress, setProgress] = useState({ step: null, message: '', pct: 0 });
   const [error, setError] = useState(null);
   const runRef = useRef(0);
+  const abortRef = useRef(null);
   const errorRef = useRef(null);
   const statusRef = useRef(null);
 
@@ -44,6 +45,7 @@ export default function NewConversion() {
     document.title = 'New conversion · FlowRead';
     return () => {
       runRef.current += 1; // ignore results that arrive after leaving the page
+      abortRef.current?.abort(); // and stop the server work
     };
   }, []);
 
@@ -82,6 +84,9 @@ export default function NewConversion() {
   const start = async () => {
     if (!file || converting) return;
     const run = ++runRef.current;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setError(null);
     setPhase('converting');
     setProgress({ step: 'layout', message: 'Uploading and reading page layout…', pct: 0 });
@@ -91,6 +96,7 @@ export default function NewConversion() {
     try {
       doc = await convertFile(file, {
         describeImages,
+        signal: controller.signal,
         onProgress: (evt) => {
           if (run !== runRef.current) return;
           if (typeof evt === 'number') {
@@ -133,6 +139,7 @@ export default function NewConversion() {
 
   const cancel = () => {
     runRef.current += 1;
+    abortRef.current?.abort();
     setPhase('idle');
     setProgress({ step: null, message: '', pct: 0 });
   };

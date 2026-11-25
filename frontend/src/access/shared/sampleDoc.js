@@ -142,7 +142,7 @@ export function buildSampleDoc() {
             type: 'image',
             src: membraneSvg(),
             alt: 'Diagram of a cell membrane. Two rows of phospholipids face each other: round blue heads point outward toward the outside of the cell and toward the cytoplasm, and orange tails point inward. A green channel protein with an open central pore spans the full width of the bilayer.',
-            altStatus: 'approved',
+            altStatus: 'ai',
             caption: 'Figure 1. A section of the phospholipid bilayer with one channel protein.',
           },
           { id: 'b13', type: 'heading', text: 'Membrane proteins', level: 3 },
