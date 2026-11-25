@@ -132,7 +132,7 @@ export function resolveSettings(profile) {
 
 const FONT_STACKS = {
   system: "var(--font-system, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif)",
-  atkinson: "var(--font-atkinson, 'Atkinson Hyperlegible'), Verdana, Tahoma, sans-serif",
+  atkinson: "var(--font-atkinson, 'Atkinson Hyperlegible Next'), 'Atkinson Hyperlegible', Verdana, Tahoma, sans-serif",
   lexend: "var(--font-lexend, 'Lexend'), Verdana, sans-serif",
   dyslexic: "var(--font-dyslexic, 'OpenDyslexic'), Verdana, sans-serif",
   serif: "var(--font-body, Georgia), Georgia, 'Times New Roman', serif",

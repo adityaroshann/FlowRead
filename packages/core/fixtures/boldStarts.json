@@ -1,5 +1,5 @@
 {
- "_doc": "Shared by packages/core/test and backend/tests. Each case: input token or text -> segments [text, bold]. Python and JS must produce identical segments.",
+ "_doc": "Shared by packages/core/test and backend/tests. Each case: input token or text -> segments [text, bold]. Python and JS must produce identical segments. Words containing complex-script characters (Arabic, Indic, SE Asian, CJK; see COMPLEX_SCRIPT_RE) are never split. Hebrew base letters (U+0590-05FF) do not join, so they are split normally.",
  "words": [
   [
    "a",
@@ -125,8 +125,56 @@
    "日本語",
    [
     "",
-    "日",
-    "本語"
+    "",
+    "日本語"
+   ]
+  ],
+  [
+   "مرحبا",
+   [
+    "",
+    "",
+    "مرحبا"
+   ]
+  ],
+  [
+   "नमस्ते",
+   [
+    "",
+    "",
+    "नमस्ते"
+   ]
+  ],
+  [
+   "สวัสดี",
+   [
+    "",
+    "",
+    "สวัสดี"
+   ]
+  ],
+  [
+   "שלום",
+   [
+    "",
+    "של",
+    "ום"
+   ]
+  ],
+  [
+   "Привет",
+   [
+    "",
+    "При",
+    "вет"
+   ]
+  ],
+  [
+   "Γειά",
+   [
+    "",
+    "Γε",
+    "ιά"
    ]
   ]
  ],
@@ -188,6 +236,27 @@
   [
    "",
    []
+  ],
+  [
+   "Cell مرحبا cell",
+   [
+    [
+     "Ce",
+     true
+    ],
+    [
+     "ll مرحبا ",
+     false
+    ],
+    [
+     "ce",
+     true
+    ],
+    [
+     "ll",
+     false
+    ]
+   ]
   ]
  ]
 }

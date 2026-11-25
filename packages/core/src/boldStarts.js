@@ -13,6 +13,20 @@
 // regular; anything after it (punctuation) also stays regular.
 const WORD_RE = /^([^\p{L}\p{N}]*)([\p{L}\p{N}][\p{L}\p{N}'’-]*)(.*)$/su;
 
+// Scripts where splitting a word across bold/regular runs breaks letter joining
+// or syllable shaping (Arabic family, Hebrew presentation forms, Indic,
+// South-East Asian), or where there are no spaces between words (CJK, kana).
+// Words containing any of these characters are left whole.
+// Ranges: U+0600-08FF, U+0900-0DFF, U+0E00-0FFF, U+1000-109F, U+1780-18AF,
+// U+3040-30FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FB1D-FDFF, U+FE70-FEFF.
+export const COMPLEX_SCRIPT_RE =
+  /[؀-ࣿऀ-෿฀-࿿က-႟ក-᢯぀-ヿ㐀-䶿一-鿿豈-﫿יִ-﷿ﹰ-﻿]/u;
+
+/** True when a word must not be split (see COMPLEX_SCRIPT_RE). */
+export function isComplexScript(text) {
+  return COMPLEX_SCRIPT_RE.test(String(text ?? ''));
+}
+
 /** How many characters of a word core to bold. */
 export function boldLength(coreLength) {
   if (coreLength <= 0) return 0;
@@ -29,6 +43,7 @@ export function splitWordStart(word) {
   const m = WORD_RE.exec(s);
   if (!m) return ['', '', s];
   const [, pre, core, post] = m;
+  if (isComplexScript(core)) return ['', '', s];
   const n = boldLength([...core].length);
   const chars = [...core];
   return [pre, chars.slice(0, n).join(''), chars.slice(n).join('') + post];
